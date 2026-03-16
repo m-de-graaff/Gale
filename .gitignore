@@ -15,3 +15,7 @@ Thumbs.db
 
 # Environment
 .env
+
+# Benchmark artifacts
+benchmarks/fixtures/
+benchmarks/results/

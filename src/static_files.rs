@@ -1,10 +1,12 @@
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
 use axum::Router;
 use tower_http::services::ServeDir;
 
 use crate::config::Config;
 use crate::error::NotFoundService;
 
-pub fn create_router(config: &Config) -> Router {
+pub fn create_static_router(config: &Config) -> Router {
     let not_found = NotFoundService::from_config(&config.error_page_404);
 
     let mut serve_dir = ServeDir::new(&config.root);
@@ -23,4 +25,8 @@ pub fn create_router(config: &Config) -> Router {
         .not_found_service(not_found);
 
     Router::new().fallback_service(serve_dir)
+}
+
+pub async fn health_handler() -> impl IntoResponse {
+    (StatusCode::OK, "OK")
 }

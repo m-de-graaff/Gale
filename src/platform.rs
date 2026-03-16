@@ -29,8 +29,27 @@ pub fn is_hidden(path: &Path) -> bool {
 }
 
 pub async fn shutdown_signal() {
-    tokio::signal::ctrl_c()
-        .await
-        .expect("failed to install Ctrl+C handler");
-    println!("\nShutting down gracefully...");
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix::{signal, SignalKind};
+        let mut sigterm = signal(SignalKind::terminate())
+            .expect("failed to install SIGTERM handler");
+        let mut sigint = signal(SignalKind::interrupt())
+            .expect("failed to install SIGINT handler");
+        tokio::select! {
+            _ = sigterm.recv() => {
+                tracing::info!("received SIGTERM, shutting down gracefully");
+            }
+            _ = sigint.recv() => {
+                tracing::info!("received SIGINT, shutting down gracefully");
+            }
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+        tracing::info!("received Ctrl+C, shutting down gracefully");
+    }
 }

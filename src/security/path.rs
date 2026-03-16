@@ -30,7 +30,7 @@ pub async fn path_security_middleware(
     Ok(next.run(request).await)
 }
 
-fn validate_path(raw_path: &str, state: &PathSecurityState) -> Result<(), StatusCode> {
+pub fn validate_path(raw_path: &str, state: &PathSecurityState) -> Result<(), StatusCode> {
     // Step 1: Reject null bytes (literal or encoded)
     if raw_path.contains('\0') || raw_path.contains("%00") || raw_path.contains("%2500") {
         return Err(StatusCode::BAD_REQUEST);

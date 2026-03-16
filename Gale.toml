@@ -16,14 +16,19 @@ port = 8080
 root = "./public"
 index = "index.html"
 error_page_404 = ""           # Path to custom 404.html (empty = built-in)
+health_endpoint = "/health"   # Health check path (empty = disabled)
+shutdown_timeout_secs = 10    # Seconds to drain connections on shutdown
 
 [tls]
 enabled = false
-cert = ""                     # /path/to/fullchain.pem
-key = ""                      # /path/to/privkey.pem
-acme = false                  # Auto Let's Encrypt provisioning
-acme_email = ""               # Required if acme = true
-acme_domain = ""              # Required if acme = true
+cert = ""                     # /path/to/fullchain.pem (static cert mode)
+key = ""                      # /path/to/privkey.pem (static cert mode)
+redirect_port = 80            # HTTP->HTTPS redirect port (0 = disabled)
+acme = false                  # Enable automatic Let's Encrypt certificates
+acme_email = ""               # Required if acme = true (e.g. admin@example.com)
+acme_domain = ""              # Required if acme = true (e.g. example.com)
+acme_cache_dir = "./acme_cache"  # Directory for cached certs/account keys
+acme_production = false       # false = LE staging (safe for testing), true = LE production
 
 [limits]
 max_body_size = 10_485_760    # 10 MB

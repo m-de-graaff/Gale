@@ -32,5 +32,7 @@ LABEL org.opencontainers.image.description="Fast static web server"
 EXPOSE 8080
 EXPOSE 443
 
+STOPSIGNAL SIGTERM
+
 ENTRYPOINT ["/gale"]
 CMD ["--root", "/public", "--port", "8080"]

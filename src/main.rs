@@ -1,19 +1,24 @@
-mod cache;
-mod compression;
-mod config;
-mod error;
-mod mime_types;
-mod platform;
-mod security;
-mod server;
-mod static_files;
+use gale_lib::config;
+use gale_lib::logging;
+use gale_lib::server;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    // Install ring as the default crypto provider for rustls.
+    // Must happen before any TLS config creation (axum-server, rustls-acme).
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("failed to install rustls crypto provider");
 
     let config = config::Config::load();
-    println!("Gale starting on {}:{}", config.bind, config.port);
-    println!("Serving from: {}", config.root);
+    logging::init(&config.logging);
+
+    let protocol = if config.tls.enabled { "https" } else { "http" };
+    tracing::info!(
+        bind = %config.bind,
+        port = config.port,
+        root = %config.root,
+        "gale starting on {protocol}",
+    );
     server::run(config).await;
 }

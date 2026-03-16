@@ -58,7 +58,7 @@ impl CacheState {
     }
 }
 
-fn extract_extension(uri_path: &str) -> Option<&str> {
+pub fn extract_extension(uri_path: &str) -> Option<&str> {
     if uri_path.ends_with('/') {
         return Some("html");
     }
@@ -98,7 +98,7 @@ pub async fn cache_middleware(
     }
 
     if state.compression_enabled {
-        headers.insert(header::VARY, HeaderValue::from_static("Accept-Encoding"));
+        headers.append(header::VARY, HeaderValue::from_static("Accept-Encoding"));
     }
 
     response

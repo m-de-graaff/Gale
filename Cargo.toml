@@ -8,6 +8,14 @@ repository = ""
 keywords = ["web-server", "static", "http", "performance"]
 categories = ["web-programming::http-server"]
 
+[lib]
+name = "gale_lib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "gale"
+path = "src/main.rs"
+
 [dependencies]
 # Core
 axum = "0.8"
@@ -30,12 +38,30 @@ toml = "0.8"
 
 # Logging
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
 # TLS
-# axum-server = { version = "0.7", features = ["tls-rustls"] }
-# rustls = "0.23"
-# rustls-pemfile = "2"
+axum-server = { version = "0.7", features = ["tls-rustls"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
+rustls-pemfile = "2"
+
+# ACME (Let's Encrypt)
+rustls-acme = { version = "0.15", default-features = false, features = ["ring", "tokio", "webpki-roots"] }
+futures-util = "0.3"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "throughput"
+harness = false
+
+[profile.bench]
+lto = "thin"
+codegen-units = 1
+opt-level = 3
 
 [profile.release]
 lto = true
