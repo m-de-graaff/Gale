@@ -39,7 +39,14 @@ Gale sits in the gap: **production-grade performance with zero unnecessary compl
 - Dynamic content, CGI, PHP, reverse proxying, load balancing
 - Plugin or module system
 - Compatibility with nginx/Apache config formats
-- Windows support (Linux-first, macOS secondary)
+
+## Platform support
+
+| Platform | Tier | Notes |
+|----------|------|-------|
+| Linux (x86_64, aarch64) | Primary | Static MUSL builds, Docker |
+| macOS (x86_64, Apple Silicon) | Primary | Universal binary via `lipo` |
+| Windows (x86_64) | Primary | MSVC toolchain |
 
 ## Tech stack
 
@@ -81,7 +88,7 @@ Gale sits in the gap: **production-grade performance with zero unnecessary compl
 - **CORS** — configurable origin allowlist (never `*` with credentials)
 
 ### Operational
-- Graceful shutdown on SIGTERM/SIGINT (connection draining)
+- Graceful shutdown (Unix signals + Windows Ctrl+C — Tokio abstracts both)
 - Structured access logging (CLF-compatible)
 - Health check endpoint (/health)
 - ACME / Let's Encrypt auto-renewal (optional)
@@ -106,18 +113,30 @@ Risks A06 (Insecure design), A07 (Auth failures), A08 (Integrity failures) are n
 ## Build & deploy
 
 ```bash
-# Development
+# Development (all platforms)
 cargo run -- --root ./public --port 8080
 
-# Release build (optimised, stripped)
+# Release build
 cargo build --release
-# Binary at: target/release/gale (~4MB)
+# Binary at: target/release/gale (Linux/macOS) or target/release/gale.exe (Windows)
 
-# Static MUSL build (zero runtime dependencies)
+# Linux — static MUSL build (zero runtime dependencies)
 rustup target add x86_64-unknown-linux-musl
 cargo build --release --target x86_64-unknown-linux-musl
 
-# Minimal Docker image
+# macOS — universal binary (Intel + Apple Silicon)
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
+cargo build --release --target aarch64-apple-darwin
+cargo build --release --target x86_64-apple-darwin
+lipo -create target/aarch64-apple-darwin/release/gale \
+     target/x86_64-apple-darwin/release/gale \
+     -output target/release/gale-universal
+
+# Windows — MSVC release build
+cargo build --release
+# Binary at: target\release\gale.exe
+
+# Docker (Linux only)
 docker build -t gale .
 # FROM scratch — final image < 10MB
 ```

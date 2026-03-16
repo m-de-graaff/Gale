@@ -5,6 +5,9 @@
 # optional — Gale works out of the box without it.
 # Environment variables override file values:
 #   GALE_PORT=8080, GALE_ROOT=./public, etc.
+#
+# Paths: use forward slashes on all platforms.
+#   root = "./public" works on Linux, macOS, and Windows.
 # ─────────────────────────────────────────────────
 
 [server]
@@ -71,6 +74,7 @@ referrer_policy = "strict-origin-when-cross-origin"
 permissions_policy = "camera=(), microphone=(), geolocation=()"
 server_header = ""            # Empty = don't send Server header
 block_dotfiles = true         # Never serve .git, .env, etc.
+                              # On Windows, also blocks files with the hidden attribute
 
 [cors]
 enabled = false

@@ -1,6 +1,8 @@
 # ─────────────────────────────────────────────────
 # Gale — Multi-stage Dockerfile
 # Final image: FROM scratch, < 10MB, zero attack surface
+# Note: This Dockerfile builds a Linux container image.
+# For macOS/Windows, build natively with cargo build --release.
 # ─────────────────────────────────────────────────
 
 # Stage 1: Build static binary

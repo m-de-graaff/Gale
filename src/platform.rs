@@ -1,0 +1,36 @@
+use std::path::Path;
+
+/// Returns `true` if the given path's filename is hidden.
+///
+/// On all platforms, a file starting with `.` is considered hidden.
+/// On Windows, additionally checks the `FILE_ATTRIBUTE_HIDDEN` flag.
+pub fn is_hidden(path: &Path) -> bool {
+    let name = match path.file_name().and_then(|n| n.to_str()) {
+        Some(n) => n,
+        None => return false,
+    };
+
+    if name.starts_with('.') {
+        return true;
+    }
+
+    #[cfg(windows)]
+    {
+        if let Ok(metadata) = std::fs::metadata(path) {
+            use std::os::windows::fs::MetadataExt;
+            const FILE_ATTRIBUTE_HIDDEN: u32 = 0x2;
+            if metadata.file_attributes() & FILE_ATTRIBUTE_HIDDEN != 0 {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+pub async fn shutdown_signal() {
+    tokio::signal::ctrl_c()
+        .await
+        .expect("failed to install Ctrl+C handler");
+    println!("\nShutting down gracefully...");
+}
