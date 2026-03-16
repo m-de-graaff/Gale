@@ -1,0 +1,38 @@
+[package]
+name = "gale"
+version = "0.1.0"
+edition = "2021"
+description = "A fast, minimal, and secure static web server"
+license = "MIT/Apache-2.0"
+repository = ""
+keywords = ["web-server", "static", "http", "performance"]
+categories = ["web-programming::http-server"]
+
+[dependencies]
+# Core
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = [
+    "fs",            # ServeDir for static files
+    "compression-br", # Brotli (Phase 3)
+    "compression-gzip", # Gzip (Phase 3)
+    "set-header",    # Security headers (Phase 2)
+    "trace",         # Request tracing (Phase 5)
+    "cors",          # CORS middleware (Phase 5)
+] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# TLS
+# axum-server = { version = "0.7", features = ["tls-rustls"] }
+# rustls = "0.23"
+# rustls-pemfile = "2"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+opt-level = 3
