@@ -1,0 +1,21 @@
+[package]
+name = "galex"
+version = "0.1.0"
+edition = "2021"
+description = "GaleX language lexer and compiler toolchain"
+license = "MIT/Apache-2.0"
+
+[lib]
+name = "galex"
+path = "src/lib.rs"
+
+[dependencies]
+unicode-xid = "0.2"
+
+[dev-dependencies]
+proptest = "1"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "lexer_bench"
+harness = false

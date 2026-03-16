@@ -1,3 +1,6 @@
+[workspace]
+members = ["galex"]
+
 [package]
 name = "gale"
 version = "0.1.0"
