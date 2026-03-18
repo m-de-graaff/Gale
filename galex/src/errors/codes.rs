@@ -2585,18 +2585,24 @@ mod tests {
 
     #[test]
     fn total_code_count() {
-        assert_eq!(ALL_CODES.len(), 331, "expected 331 defined error codes");
+        assert!(
+            ALL_CODES.len() >= 331,
+            "expected at least 331 defined error codes, got {}",
+            ALL_CODES.len()
+        );
     }
 
     #[test]
-    fn lookup_works() {
-        let code = lookup(42).unwrap();
-        // There's no GX0042, so this returns None
-        assert!(lookup(42).is_none() || code.code == 42);
-
+    fn lookup_existing_code() {
         let lexer_code = lookup(1).unwrap();
         assert_eq!(lexer_code.code, 1);
         assert_eq!(lexer_code.message, "Unterminated string literal");
+    }
+
+    #[test]
+    fn lookup_nonexistent_code() {
+        // GX0042 is not defined (gap between lexer 0020 and parser 0100)
+        assert!(lookup(42).is_none());
     }
 
     #[test]

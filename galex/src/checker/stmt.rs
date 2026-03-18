@@ -2,6 +2,7 @@
 
 use super::TypeChecker;
 use crate::ast::*;
+use crate::errors::codes;
 use crate::types::env::{BindingKind, ScopeKind};
 use crate::types::ty::TypeData;
 
@@ -189,6 +190,7 @@ impl TypeChecker {
                 // Validate that the watch target references at least one reactive source
                 if !self.references_reactive_source(target) {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0300,
                         expected: self.interner.void,
                         actual: target_ty,
                         span: *span,

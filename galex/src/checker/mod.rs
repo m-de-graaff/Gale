@@ -11,13 +11,22 @@
 //! 2. **Solve & Report** — feed all constraints to the [`ConstraintSolver`],
 //!    solve via unification, apply deep substitution, and report type errors.
 
+pub mod action;
 mod boundary;
 mod decl;
 pub(crate) mod dom;
+pub mod env;
 mod expr;
+pub mod form;
+pub mod guard;
+pub mod head;
+pub mod imports;
+pub mod middleware;
 mod ops;
+pub mod reactivity;
 mod stmt;
-mod template;
+pub mod store;
+pub mod template;
 
 use std::collections::HashMap;
 
@@ -54,6 +63,10 @@ pub struct TypeChecker {
     /// Declared env var types — populated by `check_env_decl()`, used by
     /// `Expr::EnvAccess` to return the declared type instead of `string`.
     declared_env_types: HashMap<SmolStr, TypeId>,
+    /// Template-specific diagnostics (GX0700–GX0799) collected during
+    /// template checking. These are produced as [`Diagnostic`] values
+    /// rather than [`TypeError`]s.
+    pub template_diagnostics: Vec<crate::errors::Diagnostic>,
 }
 
 impl TypeChecker {
@@ -125,6 +138,7 @@ impl TypeChecker {
             current_return_type: None,
             current_store_method: None,
             declared_env_types: HashMap::new(),
+            template_diagnostics: Vec::new(),
         }
     }
 
@@ -205,6 +219,7 @@ impl TypeChecker {
             ty
         } else {
             self.emit_error(TypeError {
+                code: &crate::errors::codes::GX0302,
                 expected: self.interner.void, // placeholder
                 actual: self.interner.void,
                 span,
@@ -268,6 +283,7 @@ impl TypeChecker {
     /// Emit a type mismatch error.
     fn error_type_mismatch(&mut self, expected: TypeId, actual: TypeId, span: Span, context: &str) {
         self.emit_error(TypeError {
+            code: &crate::errors::codes::GX0300,
             expected,
             actual,
             span,
@@ -295,6 +311,7 @@ impl TypeChecker {
         };
         if let Err(e) = self.env.define(name, binding) {
             self.emit_error(TypeError {
+                code: &crate::errors::codes::GX0327,
                 expected: self.interner.void,
                 actual: self.interner.void,
                 span: e.new_span,

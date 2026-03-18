@@ -41,6 +41,7 @@ pub mod types;
 pub use checker::TypeChecker;
 pub use diagnostic::DiagnosticRenderer;
 pub use error::{LexError, LexResult};
+pub use errors::{Diagnostic, DiagnosticLevel, ErrorCode, IntoDiagnostic};
 pub use lexer::{lex, LexMode, Lexer};
 pub use span::{FileTable, Span};
 pub use token::{Token, TokenWithSpan};

@@ -283,7 +283,7 @@ mod tests {
         };
         let output = r.render(&err);
 
-        assert!(output.contains("error[GX0002]"), "should have error code");
+        assert!(output.contains("error[GX0001]"), "should have error code");
         assert!(
             output.contains("unterminated string literal"),
             "should have message"
@@ -316,7 +316,7 @@ mod tests {
         };
         let output = r.render(&err);
 
-        assert!(output.contains("GX0001"));
+        assert!(output.contains("GX0006"));
         assert!(output.contains("3 |"));
         assert!(output.contains("let c = ~"));
     }

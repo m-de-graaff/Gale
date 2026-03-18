@@ -10,14 +10,14 @@ out ui ProductDetail {
     title: "Product Details"
   }
 
-  <h1>"Product Details"</h1>
-  <p>"Detailed product view with add-to-cart action."</p>
+  <h1>Product Details</h1>
+  <p>Detailed product view with add-to-cart action.</p>
 
   <section>
-    <h2>"GaleX T-Shirt"</h2>
-    <p>"A premium t-shirt for web developers who love type safety."</p>
-    <p>"$29.99"</p>
+    <h2>GaleX T-Shirt</h2>
+    <p>A premium t-shirt for web developers who love type safety.</p>
+    <p>$29.99</p>
   </section>
 
-  <a href="/">"Back to shop"</a>
+  <a href="/">Back to shop</a>
 }

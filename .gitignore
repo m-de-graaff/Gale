@@ -25,5 +25,13 @@ benchmarks/results/
 # Windows NUL device artifacts
 nul
 
+# Node.js
+node_modules/
+pnpm-lock.yaml
+
+# VSCode extension build artifacts
+*.vsix
+out/
+
 # AI tool working directories
 .opencode/

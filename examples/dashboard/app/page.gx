@@ -12,21 +12,21 @@ out ui DashboardOverview {
   signal activeUsers = 0
   signal totalOrders = 0
 
-  <h1>"Dashboard"</h1>
-  <p>"Welcome to the admin dashboard."</p>
+  <h1>Dashboard</h1>
+  <p>Welcome to the admin dashboard.</p>
 
   <section>
     <div>
-      <h3>"Active Users"</h3>
-      <p>"0"</p>
+      <h3>Active Users</h3>
+      <p>0</p>
     </div>
     <div>
-      <h3>"Total Orders"</h3>
-      <p>"0"</p>
+      <h3>Total Orders</h3>
+      <p>0</p>
     </div>
     <div>
-      <h3>"Revenue"</h3>
-      <p>"$0"</p>
+      <h3>Revenue</h3>
+      <p>$0</p>
     </div>
   </section>
 }

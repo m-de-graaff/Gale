@@ -1,0 +1,10 @@
+**/.npmrc
+**/pnpm-lock.yaml
+**/package-lock.json
+**/yarn.lock
+**/node_modules
+**/.gitignore
+**/tsconfig.json
+**/src/**
+**/*.map
+**/.vscode/**

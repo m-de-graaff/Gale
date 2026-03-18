@@ -66,35 +66,34 @@ pub fn run_tailwind_cli(
         .join("_gale_tw_work");
     std::fs::create_dir_all(&work_dir)?;
 
-    // Generate tailwind.config.js
-    let config_path = config::generate_tailwind_config(tw_config, app_dir, safelist, &work_dir);
-
-    // Generate or use custom input CSS
-    let input_css_path = work_dir.join("input.css");
-    if let Some(ref custom_css) = tw_config.input_css {
-        // Copy user's custom CSS as the input (it should contain @tailwind directives)
+    // Generate Tailwind v4 input CSS with @source and @theme directives.
+    // In v4, the input CSS IS the configuration (no separate tailwind.config.js).
+    let input_css_path = if let Some(ref custom_css) = tw_config.input_css {
         if custom_css.is_file() {
-            std::fs::copy(custom_css, &input_css_path)?;
+            // User's custom CSS — copy to work dir so we can reference it
+            let dest = work_dir.join("input.css");
+            std::fs::copy(custom_css, &dest)?;
+            dest
         } else {
-            // Custom CSS not found — use default
-            std::fs::write(&input_css_path, config::default_input_css())?;
+            config::generate_tailwind_config(tw_config, app_dir, safelist, &work_dir)
         }
     } else {
-        std::fs::write(&input_css_path, config::default_input_css())?;
-    }
+        config::generate_tailwind_config(tw_config, app_dir, safelist, &work_dir)
+    };
 
     // Ensure output directory exists
     if let Some(parent) = output_css.parent() {
         std::fs::create_dir_all(parent)?;
     }
 
-    // Build the npx command
+    // Build the npx command.
+    // Tailwind v4 uses `@tailwindcss/cli` as the CLI package.
+    // Falls back to legacy `tailwindcss` if v4 CLI is not available.
     let npx = find_npx()?;
     let mut cmd = Command::new(&npx);
-    cmd.arg("tailwindcss");
+    cmd.arg("@tailwindcss/cli");
     cmd.arg("--input").arg(&input_css_path);
     cmd.arg("--output").arg(output_css);
-    cmd.arg("--config").arg(&config_path);
     if minify {
         cmd.arg("--minify");
     }

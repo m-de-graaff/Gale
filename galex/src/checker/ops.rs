@@ -2,6 +2,7 @@
 
 use super::TypeChecker;
 use crate::ast::BinOp;
+use crate::errors::codes;
 use crate::span::Span;
 use crate::types::constraint::TypeErrorKind;
 use crate::types::ty::{TypeData, TypeId};
@@ -143,6 +144,7 @@ impl TypeChecker {
 
         if !left_ok || !right_ok {
             self.emit_error(crate::types::constraint::TypeError {
+                code: &codes::GX0310,
                 expected: self.interner.int,
                 actual: if !left_ok { left } else { right },
                 span,

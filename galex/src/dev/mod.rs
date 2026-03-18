@@ -8,6 +8,7 @@
 //! 5. Sends reload/error signals to connected browsers via WebSocket
 
 pub mod rebuild;
+pub mod runtime_errors;
 pub mod server;
 pub mod watcher;
 

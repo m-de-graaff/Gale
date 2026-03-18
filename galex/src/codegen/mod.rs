@@ -63,6 +63,7 @@ pub mod route;
 pub mod rust_emitter;
 pub mod ssr;
 pub mod types;
+pub mod validation;
 
 use std::collections::HashSet;
 use std::path::Path;
@@ -530,6 +531,12 @@ impl<'a> CodegenContext<'a> {
 
     /// Generate scaffold files and module declarations.
     fn finalize(&mut self) {
+        // Pre-compute module flags that affect main.rs generation.
+        // Guards require the shared/validation module.
+        if self.modules.has_guards && !self.guard_modules.is_empty() {
+            self.modules.has_shared = true;
+        }
+
         // Cargo.toml
         self.files.add_file(
             "Cargo.toml",

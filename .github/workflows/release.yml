@@ -3,34 +3,42 @@ name: Release
 on:
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build ${{ matrix.suffix }}
+  cli-bundles:
+    name: Build CLI bundles (${{ matrix.suffix }})
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            suffix: linux-amd64
-            ext: ""
+            suffix: linux-x86_64
+            ext: ''
+            archive_ext: tar.gz
+            raw_lsp_name: gale-lsp-x86_64-unknown-linux-musl
           - os: macos-latest
             target: aarch64-apple-darwin
-            suffix: macos-arm64
-            ext: ""
+            suffix: macos-aarch64
+            ext: ''
+            archive_ext: tar.gz
+            raw_lsp_name: gale-lsp-aarch64-apple-darwin
           - os: macos-latest
             target: x86_64-apple-darwin
-            suffix: macos-amd64
-            ext: ""
+            suffix: macos-x86_64
+            ext: ''
+            archive_ext: tar.gz
+            raw_lsp_name: gale-lsp-x86_64-apple-darwin
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            suffix: windows-amd64
-            ext: ".exe"
+            suffix: windows-x86_64
+            ext: '.exe'
+            archive_ext: zip
+            raw_lsp_name: gale-lsp-x86_64-pc-windows-msvc.exe
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -39,57 +47,123 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Install musl-tools
+      - name: Install musl tools
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
 
-      - name: Build and stage binaries
+      - name: Build Gale server
+        run: cargo build --release --target ${{ matrix.target }} -p gale
+
+      - name: Stage Gale server
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p staging
+          mkdir -p staging/server
+          cp "target/${{ matrix.target }}/release/gale${{ matrix.ext }}" "staging/server/gale-server${{ matrix.ext }}"
 
-          # 1. Build web server (root package) — produces 'gale' binary
-          cargo build --release --target ${{ matrix.target }} -p gale
-          cp "target/${{ matrix.target }}/release/gale${{ matrix.ext }}" \
-             "staging/gale${{ matrix.ext }}"
+      - name: Build Gale CLI and LSP
+        run: cargo build --release --target ${{ matrix.target }} -p galex
 
-          # 2. Build galex (language toolchain) — also produces 'gale' binary,
-          #    which overwrites the one above in target/. We already saved it.
-          #    Rename galex's 'gale' to 'galex' to avoid conflict.
-          cargo build --release --target ${{ matrix.target }} -p galex
-          cp "target/${{ matrix.target }}/release/gale${{ matrix.ext }}" \
-             "staging/galex${{ matrix.ext }}"
-          cp "target/${{ matrix.target }}/release/gale-lsp${{ matrix.ext }}" \
-             "staging/gale-lsp${{ matrix.ext }}"
-
-          # 3. Build gale-registry
-          cargo build --release --target ${{ matrix.target }} -p gale-registry
-          cp "target/${{ matrix.target }}/release/gale-registry${{ matrix.ext }}" \
-             "staging/gale-registry${{ matrix.ext }}"
-
-      - name: Package (tar.gz)
-        if: matrix.os != 'windows-latest'
-        shell: bash
-        run: tar czf "gale-${{ matrix.suffix }}.tar.gz" -C staging .
-
-      - name: Package (zip)
-        if: matrix.os == 'windows-latest'
+      - name: Stage Gale SDK and raw LSP
         shell: bash
         run: |
-          cd staging
-          7z a "../gale-${{ matrix.suffix }}.zip" .
+          set -euo pipefail
+          mkdir -p staging/sdk staging/raw
+          cp "target/${{ matrix.target }}/release/gale${{ matrix.ext }}" "staging/sdk/gale${{ matrix.ext }}"
+          cp "target/${{ matrix.target }}/release/gale-lsp${{ matrix.ext }}" "staging/sdk/gale-lsp${{ matrix.ext }}"
+          cp "target/${{ matrix.target }}/release/gale-lsp${{ matrix.ext }}" "staging/raw/${{ matrix.raw_lsp_name }}"
 
-      - name: Upload artifact
+      - name: Package tar.gz artifacts
+        if: matrix.archive_ext == 'tar.gz'
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar czf "gale-sdk-${{ matrix.suffix }}.tar.gz" -C staging/sdk .
+          tar czf "gale-server-${{ matrix.suffix }}.tar.gz" -C staging/server .
+
+      - name: Package zip artifacts
+        if: matrix.archive_ext == 'zip'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd staging/sdk
+          7z a "../../gale-sdk-${{ matrix.suffix }}.zip" .
+          cd ../server
+          7z a "../../gale-server-${{ matrix.suffix }}.zip" .
+
+      - name: Upload platform artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: gale-${{ matrix.suffix }}
-          path: gale-${{ matrix.suffix }}.*
+          name: gale-platform-${{ matrix.suffix }}
+          path: |
+            gale-sdk-${{ matrix.suffix }}.*
+            gale-server-${{ matrix.suffix }}.*
+            staging/raw/${{ matrix.raw_lsp_name }}
+          if-no-files-found: error
+
+  editor-artifacts:
+    name: Build editor artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Package VS Code extension
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd galex/editors/vscode
+          pnpm install
+          pnpm run package
+          mv *.vsix "../../../gale-vscode-${GITHUB_REF_NAME}.vsix"
+
+      - name: Build Zed extension WASM
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd galex/editors/zed
+          cargo build --release --target wasm32-wasip2
+
+      - name: Package Zed extension bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staging/zed/gale-zed
+          cp galex/editors/zed/extension.toml staging/zed/gale-zed/extension.toml
+          cp galex/editors/zed/install-zed.sh staging/zed/gale-zed/install-zed.sh
+          cp galex/editors/zed/install-zed.ps1 staging/zed/gale-zed/install-zed.ps1
+          cp galex/editors/zed/README.md staging/zed/gale-zed/README.md
+          cp galex/editors/zed/target/wasm32-wasip2/release/gale_zed.wasm staging/zed/gale-zed/extension.wasm
+          cp -R galex/editors/zed/languages staging/zed/gale-zed/languages
+          cp -R tree-sitter-gale staging/zed/gale-zed/tree-sitter-gale
+          chmod +x staging/zed/gale-zed/install-zed.sh
+          cd staging/zed
+          zip -r "../../gale-zed-${GITHUB_REF_NAME}.zip" gale-zed
+
+      - name: Upload editor artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gale-editors
+          path: |
+            gale-vscode-${{ github.ref_name }}.vsix
+            gale-zed-${{ github.ref_name }}.zip
           if-no-files-found: error
 
   release:
-    name: Create GitHub Release
-    needs: build
+    name: Create GitHub release
+    needs: [cli-bundles, editor-artifacts]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -100,8 +174,16 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Create release
+      - name: Generate checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd artifacts
+          sha256sum * > checksums.txt
+
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: artifacts/*
+          files: |
+            artifacts/*

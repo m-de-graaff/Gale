@@ -1,14 +1,15 @@
 id = "gale"
-name = "GaleX"
+name = "Gale"
 version = "0.1.0"
 schema_version = 1
 authors = ["Gale Team"]
-description = "GaleX language support for Zed — syntax highlighting and LSP"
+description = "Gale language support for Zed — syntax highlighting and LSP"
 repository = "https://github.com/m-de-graaff/Gale"
 
 [grammars.gale]
-repository = "file:///C:/Development/Gale/tree-sitter-gale"
+repository = "https://github.com/m-de-graaff/Gale"
 rev = "main"
+subdirectory = "tree-sitter-gale"
 
 [language_servers.gale-lsp]
 name = "Gale LSP"

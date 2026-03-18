@@ -4,6 +4,7 @@ use smol_str::SmolStr;
 
 use super::TypeChecker;
 use crate::ast::*;
+use crate::errors::codes;
 use crate::types::env::{BindingKind, ScopeKind};
 use crate::types::ty::{self, *};
 
@@ -143,6 +144,7 @@ impl TypeChecker {
             // Check for duplicate field names
             if !seen_names.insert(field.name.clone()) {
                 self.emit_error(crate::types::constraint::TypeError {
+                    code: &codes::GX0316,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span: field.span,
@@ -242,6 +244,7 @@ impl TypeChecker {
 
         if !valid {
             self.emit_error(crate::types::constraint::TypeError {
+                code: &crate::errors::codes::GX0600,
                 expected: self.interner.void,
                 actual: field_ty,
                 span,
@@ -283,6 +286,7 @@ impl TypeChecker {
                     Some(Validation::Min(*value))
                 } else {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0300,
                         expected: self.interner.int,
                         actual: self.interner.void,
                         span,
@@ -297,6 +301,7 @@ impl TypeChecker {
                     Some(Validation::Max(*value))
                 } else {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0300,
                         expected: self.interner.int,
                         actual: self.interner.void,
                         span,
@@ -311,6 +316,7 @@ impl TypeChecker {
                     Some(Validation::MinLen(*value as usize))
                 } else {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0300,
                         expected: self.interner.int,
                         actual: self.interner.void,
                         span,
@@ -325,6 +331,7 @@ impl TypeChecker {
                     Some(Validation::MaxLen(*value as usize))
                 } else {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0300,
                         expected: self.interner.int,
                         actual: self.interner.void,
                         span,
@@ -339,6 +346,7 @@ impl TypeChecker {
                     Some(Validation::Regex(value.clone()))
                 } else {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0300,
                         expected: self.interner.string,
                         actual: self.interner.void,
                         span,
@@ -362,6 +370,7 @@ impl TypeChecker {
                     .collect();
                 if values.is_empty() {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0300,
                         expected: self.interner.string,
                         actual: self.interner.void,
                         span,
@@ -381,6 +390,7 @@ impl TypeChecker {
                     Some(Validation::Precision(*value as u32))
                 } else {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0300,
                         expected: self.interner.int,
                         actual: self.interner.void,
                         span,
@@ -400,6 +410,7 @@ impl TypeChecker {
                         Expr::NullLit { .. } => "null".to_string(),
                         _ => {
                             self.emit_error(crate::types::constraint::TypeError {
+                                code: &crate::errors::codes::GX0628,
                                 expected: self.interner.void,
                                 actual: self.interner.void,
                                 span,
@@ -412,6 +423,7 @@ impl TypeChecker {
                     Some(Validation::Default(SmolStr::new(json_repr)))
                 } else {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0300,
                         expected: self.interner.void,
                         actual: self.interner.void,
                         span,
@@ -430,6 +442,7 @@ impl TypeChecker {
                     Some(Validation::Range(*min, *max))
                 } else {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0300,
                         expected: self.interner.int,
                         actual: self.interner.void,
                         span,
@@ -571,6 +584,7 @@ impl TypeChecker {
                             | TypeData::TypeVar(_)
                     ) {
                         self.emit_error(crate::types::constraint::TypeError {
+                            code: &crate::errors::codes::GX0905,
                             expected: self.interner.string,
                             actual: ty,
                             span: *span,
@@ -683,6 +697,7 @@ impl TypeChecker {
             // Unknown handler event name
             (event, _) => {
                 self.emit_error(crate::types::constraint::TypeError {
+                    code: &codes::GX0300,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span,
@@ -841,6 +856,7 @@ impl TypeChecker {
         // Validate: layout MUST contain a <slot/> node
         if !Self::template_has_slot(&decl.body.template) {
             self.emit_error(crate::types::constraint::TypeError {
+                code: &crate::errors::codes::GX0707,
                 expected: self.interner.void,
                 actual: self.interner.void,
                 span: decl.span,
@@ -920,6 +936,7 @@ impl TypeChecker {
                     )
                 };
                 self.emit_error(crate::types::constraint::TypeError {
+                    code: &codes::GX0300,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span: handler.span,
@@ -961,6 +978,7 @@ impl TypeChecker {
                 // Return type must be serializable (it goes over the wire)
                 if !self.is_serializable(ret_ty) {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0504,
                         expected: self.interner.void,
                         actual: ret_ty,
                         span: handler.span,
@@ -998,6 +1016,7 @@ impl TypeChecker {
 
             if !is_primitive {
                 self.emit_error(crate::types::constraint::TypeError {
+                    code: &codes::GX0300,
                     expected: self.interner.string,
                     actual: ty,
                     span: var.span,

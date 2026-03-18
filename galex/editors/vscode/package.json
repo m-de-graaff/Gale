@@ -1,21 +1,36 @@
 {
   "name": "gale",
-  "displayName": "GaleX",
-  "description": "GaleX language support — syntax highlighting, diagnostics, autocomplete, and more",
+  "displayName": "Gale",
+  "description": "Gale editor support for .gx files — syntax highlighting, diagnostics, snippets, and language server integration",
   "version": "0.1.0",
   "publisher": "gale",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/m-de-graaff/Gale"
+  },
   "engines": {
     "vscode": "^1.75.0"
   },
-  "categories": ["Programming Languages", "Linters", "Formatters"],
-  "activationEvents": ["onLanguage:gale"],
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters"
+  ],
+  "activationEvents": [
+    "onLanguage:gale"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "languages": [
       {
         "id": "gale",
-        "aliases": ["GaleX", "gale"],
-        "extensions": [".gx"],
+        "aliases": [
+          "GaleX",
+          "gale"
+        ],
+        "extensions": [
+          ".gx"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -33,7 +48,7 @@
       }
     ],
     "configuration": {
-      "title": "GaleX",
+      "title": "Gale",
       "properties": {
         "gale.lspPath": {
           "type": "string",
@@ -45,11 +60,17 @@
   },
   "scripts": {
     "compile": "tsc -p ./",
-    "package": "vsce package"
+    "bundle": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "package": "pnpm run bundle && vsce package --no-dependencies --skip-license"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.0"
   },
   "devDependencies": {
+    "@types/node": "^24.12.0",
     "@types/vscode": "^1.75.0",
-    "typescript": "^5.0.0",
-    "vscode-languageclient": "^9.0.0"
+    "@vscode/vsce": "^3.6.1",
+    "esbuild": "^0.27.4",
+    "typescript": "^5.0.0"
   }
 }

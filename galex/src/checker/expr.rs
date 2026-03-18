@@ -2,6 +2,7 @@
 
 use super::TypeChecker;
 use crate::ast::*;
+use crate::errors::codes;
 use crate::types::constraint::TypeErrorKind;
 use crate::types::ty::*;
 
@@ -53,6 +54,7 @@ impl TypeChecker {
                     binding_clone.ty
                 } else {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0302,
                         expected: self.interner.void,
                         actual: self.interner.void,
                         span: *span,
@@ -146,7 +148,13 @@ impl TypeChecker {
                         // Check arity
                         let required = sig.params.iter().filter(|p| !p.has_default).count();
                         if args.len() < required || args.len() > sig.params.len() {
+                            let arity_code = if args.len() < required {
+                                &codes::GX0304
+                            } else {
+                                &codes::GX0305
+                            };
                             self.emit_error(crate::types::constraint::TypeError {
+                                code: arity_code,
                                 expected: callee_ty,
                                 actual: callee_ty,
                                 span: *span,
@@ -410,6 +418,7 @@ impl TypeChecker {
                     if let Some(binding) = self.env.lookup(name) {
                         if !binding.is_mutable() {
                             self.emit_error(crate::types::constraint::TypeError {
+                                code: &codes::GX0328,
                                 expected: self.interner.void,
                                 actual: self.interner.void,
                                 span: *id_span,
@@ -608,6 +617,7 @@ impl TypeChecker {
 
                 if pick_names.is_empty() {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0300,
                         expected: self.interner.void,
                         actual: obj_ty,
                         span,
@@ -628,6 +638,7 @@ impl TypeChecker {
                 for name in &pick_names {
                     if !guard.fields.iter().any(|f| f.name == *name) {
                         self.emit_error(crate::types::constraint::TypeError {
+                            code: &codes::GX0307,
                             expected: self.interner.void,
                             actual: obj_ty,
                             span,
@@ -660,6 +671,7 @@ impl TypeChecker {
 
                 if omit_names.is_empty() {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0300,
                         expected: self.interner.void,
                         actual: obj_ty,
                         span,
@@ -716,6 +728,7 @@ impl TypeChecker {
                         .is_some_and(|name| *name == store.name);
                     if !allowed {
                         self.emit_error(crate::types::constraint::TypeError {
+                            code: &codes::GX0328,
                             expected: self.interner.void,
                             actual: obj_ty,
                             span: *member_span,
@@ -734,6 +747,7 @@ impl TypeChecker {
             if let Some((root_name, root_binding_kind)) = self.find_root_binding(target) {
                 if root_binding_kind == crate::types::env::BindingKind::Frozen {
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0329,
                         expected: self.interner.void,
                         actual: self.interner.void,
                         span,

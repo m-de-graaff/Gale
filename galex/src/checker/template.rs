@@ -3,6 +3,7 @@
 use super::dom;
 use super::TypeChecker;
 use crate::ast::*;
+use crate::errors::{codes, Diagnostic};
 use crate::types::constraint::TypeErrorKind;
 use crate::types::env::{BindingKind, ScopeKind};
 use crate::types::ty::{TypeData, TypeId};
@@ -286,7 +287,9 @@ impl TypeChecker {
                     // Type not yet resolved — defer to constraint solver
                 }
                 _ => {
+                    // GX0712: bind target is not a signal
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0712,
                         expected: self.interner.void,
                         actual: binding.ty,
                         span,
@@ -300,6 +303,7 @@ impl TypeChecker {
             }
         } else {
             self.emit_error(crate::types::constraint::TypeError {
+                code: &codes::GX0302,
                 expected: self.interner.void,
                 actual: self.interner.void,
                 span,
@@ -349,7 +353,9 @@ impl TypeChecker {
                 // Type not yet resolved — defer
             }
             _ => {
+                // GX0714: on:x handler must be a function
                 self.emit_error(crate::types::constraint::TypeError {
+                    code: &codes::GX0714,
                     expected: self.interner.void,
                     actual: handler_ty,
                     span,
@@ -392,7 +398,9 @@ impl TypeChecker {
                     // Defer
                 }
                 _ => {
+                    // GX0717: ref target is not declared as ref
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX0717,
                         expected: self.interner.void,
                         actual: binding.ty,
                         span,
@@ -484,8 +492,9 @@ impl TypeChecker {
                     }
                 }
                 None => {
-                    // Unknown head property — emit a warning-level error
+                    // GX1400: Unknown head property
                     self.emit_error(crate::types::constraint::TypeError {
+                        code: &codes::GX1400,
                         expected: self.interner.void,
                         actual: self.interner.void,
                         span: field.span,
@@ -498,6 +507,169 @@ impl TypeChecker {
                     });
                 }
             }
+        }
+    }
+}
+
+// ── Standalone template analysis (Diagnostic-based) ────────────────────
+
+/// HTML void elements that cannot have children.
+const VOID_ELEMENTS: &[&str] = &[
+    "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source",
+    "track", "wbr",
+];
+
+/// Validate template nodes and produce `Diagnostic` values.
+///
+/// These checks run independently of the type-checker and emit diagnostics
+/// for structural template issues: void elements with children (GX0708),
+/// inline style attributes (GX0720), and excessive nesting (GX0722).
+pub fn validate_template_diagnostics(program: &Program, diagnostics: &mut Vec<Diagnostic>) {
+    for item in &program.items {
+        match item {
+            Item::ComponentDecl(c) => {
+                check_void_and_style(&c.body.template, diagnostics);
+                check_template_depth(&c.body.template, 0, diagnostics);
+            }
+            Item::LayoutDecl(l) => {
+                check_void_and_style(&l.body.template, diagnostics);
+                check_template_depth(&l.body.template, 0, diagnostics);
+            }
+            Item::Out(out) => match out.inner.as_ref() {
+                Item::ComponentDecl(c) => {
+                    check_void_and_style(&c.body.template, diagnostics);
+                    check_template_depth(&c.body.template, 0, diagnostics);
+                }
+                Item::LayoutDecl(l) => {
+                    check_void_and_style(&l.body.template, diagnostics);
+                    check_template_depth(&l.body.template, 0, diagnostics);
+                }
+                _ => {}
+            },
+            Item::ServerBlock(b) | Item::ClientBlock(b) | Item::SharedBlock(b) => {
+                for sub in &b.items {
+                    if let Item::ComponentDecl(c) = sub {
+                        check_void_and_style(&c.body.template, diagnostics);
+                        check_template_depth(&c.body.template, 0, diagnostics);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// GX0708 + GX0720: Check void elements with children and inline style attributes.
+fn check_void_and_style(nodes: &[TemplateNode], diagnostics: &mut Vec<Diagnostic>) {
+    for node in nodes {
+        match node {
+            TemplateNode::Element {
+                tag,
+                attributes,
+                children,
+                span,
+                ..
+            } => {
+                // GX0708: Void element with children
+                if VOID_ELEMENTS.contains(&tag.as_str()) && !children.is_empty() {
+                    diagnostics.push(
+                        Diagnostic::with_message(
+                            &codes::GX0708,
+                            format!("<{}> is a void element and cannot have children", tag),
+                            *span,
+                        )
+                        .with_hint("Remove the children or use a non-void element."),
+                    );
+                }
+                // GX0720: Inline style attribute
+                for attr in attributes {
+                    if attr.name.as_str() == "style" {
+                        diagnostics.push(
+                            Diagnostic::with_message(
+                                &codes::GX0720,
+                                format!("inline `style` attribute on <{}>", tag),
+                                attr.span,
+                            )
+                            .with_hint("Consider using Tailwind classes instead of inline styles."),
+                        );
+                    }
+                }
+                check_void_and_style(children, diagnostics);
+            }
+            TemplateNode::SelfClosing {
+                tag, attributes, ..
+            } => {
+                // GX0720: Inline style attribute
+                for attr in attributes {
+                    if attr.name.as_str() == "style" {
+                        diagnostics.push(
+                            Diagnostic::with_message(
+                                &codes::GX0720,
+                                format!("inline `style` attribute on <{}/>", tag),
+                                attr.span,
+                            )
+                            .with_hint("Consider using Tailwind classes instead of inline styles."),
+                        );
+                    }
+                }
+            }
+            TemplateNode::When {
+                body, else_branch, ..
+            } => {
+                check_void_and_style(body, diagnostics);
+                if let Some(WhenElse::Else(nodes)) = else_branch {
+                    check_void_and_style(nodes, diagnostics);
+                }
+            }
+            TemplateNode::Each { body, empty, .. } => {
+                check_void_and_style(body, diagnostics);
+                if let Some(nodes) = empty {
+                    check_void_and_style(nodes, diagnostics);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// GX0722: Check for deeply nested template nodes (>10 levels).
+fn check_template_depth(nodes: &[TemplateNode], depth: usize, diagnostics: &mut Vec<Diagnostic>) {
+    for node in nodes {
+        match node {
+            TemplateNode::Element { children, span, .. } => {
+                if depth > 10 {
+                    diagnostics.push(
+                        Diagnostic::with_message(
+                            &codes::GX0722,
+                            format!("template nesting depth is {} levels (>10)", depth),
+                            *span,
+                        )
+                        .with_hint(
+                            "Consider extracting deeply nested content into a sub-component.",
+                        ),
+                    );
+                    return;
+                }
+                check_template_depth(children, depth + 1, diagnostics);
+            }
+            TemplateNode::When {
+                body, else_branch, ..
+            } => {
+                check_template_depth(body, depth + 1, diagnostics);
+                if let Some(WhenElse::Else(nodes)) = else_branch {
+                    check_template_depth(nodes, depth + 1, diagnostics);
+                }
+            }
+            TemplateNode::Each { body, empty, .. } => {
+                check_template_depth(body, depth + 1, diagnostics);
+                if let Some(nodes) = empty {
+                    check_template_depth(nodes, depth + 1, diagnostics);
+                }
+            }
+            TemplateNode::Suspend { body, .. } => {
+                check_template_depth(body, depth + 1, diagnostics);
+            }
+            _ => {}
         }
     }
 }

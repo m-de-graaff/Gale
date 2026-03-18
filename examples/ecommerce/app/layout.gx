@@ -7,8 +7,8 @@ out layout Root {
     <body>
       <header>
         <nav>
-          <a href="/">"Shop"</a>
-          <a href="/cart">"Cart"</a>
+          <a href="/">Shop</a>
+          <a href="/cart">Cart</a>
         </nav>
       </header>
       <main>

@@ -135,7 +135,7 @@ const LAYOUT_TEMPLATE: &str = r#"out layout Root {
       <meta name="viewport" content="width=device-width, initial-scale=1" />
     </head>
     <body>
-      <slot />
+      slot
     </body>
   </html>
 }
@@ -172,9 +172,7 @@ const ABOUT_PAGE: &str = r#"out ui AboutPage {
 }
 "#;
 
-const GLOBAL_CSS: &str = r#"@tailwind base;
-@tailwind components;
-@tailwind utilities;
+const GLOBAL_CSS: &str = r#"@import "tailwindcss";
 "#;
 
 // ── Tests ──────────────────────────────────────────────────────────────

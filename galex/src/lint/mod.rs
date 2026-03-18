@@ -3,11 +3,14 @@
 pub mod rules;
 
 use crate::ast::Program;
+use crate::errors::{Diagnostic, ErrorCode, IntoDiagnostic};
 use crate::span::Span;
 
 /// A lint warning or error.
 #[derive(Debug, Clone)]
 pub struct LintWarning {
+    /// The stable error code for this lint rule.
+    pub code: &'static ErrorCode,
     /// Rule name (e.g. "unused-signal", "missing-alt").
     pub rule: &'static str,
     /// Human-readable message.
@@ -33,9 +36,15 @@ impl std::fmt::Display for LintWarning {
         };
         write!(
             f,
-            "{level}[{}] ({}:{}): {}",
-            self.rule, self.span.line, self.span.col, self.message
+            "{level}[{}] {} ({}:{}): {}",
+            self.code, self.rule, self.span.line, self.span.col, self.message
         )
+    }
+}
+
+impl IntoDiagnostic for LintWarning {
+    fn into_diagnostic(self) -> Diagnostic {
+        Diagnostic::with_message(self.code, self.message, self.span)
     }
 }
 
@@ -48,5 +57,12 @@ pub fn lint_program(program: &Program) -> Vec<LintWarning> {
     rules::check_missing_key_on_each(program, &mut warnings);
     rules::check_missing_alt_on_img(program, &mut warnings);
     rules::check_unreachable_after_return(program, &mut warnings);
+    rules::check_unused_variables(program, &mut warnings);
+    rules::check_console_log(program, &mut warnings);
+    rules::check_unnecessary_else_after_return(program, &mut warnings);
+    rules::check_missing_label_for_input(program, &mut warnings);
+    rules::check_function_too_long(program, &mut warnings);
+    rules::check_file_too_long(program, &mut warnings);
+    rules::check_todo_comments(program, &mut warnings);
     warnings
 }

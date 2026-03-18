@@ -25,7 +25,7 @@ fn single_unterminated_string() {
     let out = r.render(&err);
 
     // Must contain: error code, message, file path, line number, source, caret, hint
-    assert!(out.contains("error[GX0002]"));
+    assert!(out.contains("error[GX0001]"));
     assert!(out.contains("unterminated string literal"));
     assert!(out.contains("--> app/page.gx:1:13"));
     assert!(out.contains("1 |"));
@@ -49,7 +49,7 @@ fn error_on_line_3_of_multiline_source() {
     };
     let out = r.render(&err);
 
-    assert!(out.contains("error[GX0001]"));
+    assert!(out.contains("error[GX0006]"));
     assert!(out.contains("--> src/main.gx:3:9"));
     assert!(out.contains("3 |"));
     assert!(out.contains("let c = ~"));
@@ -79,8 +79,8 @@ fn multiple_errors_rendered_together() {
     let out = r.render_all(&errors);
 
     // Both error codes should appear
+    assert!(out.contains("GX0006"));
     assert!(out.contains("GX0001"));
-    assert!(out.contains("GX0002"));
 
     // Count the number of error headers
     let error_count = out.matches("error[").count();
@@ -209,7 +209,7 @@ fn error_at_end_of_file() {
     };
     let out = r.render(&err);
 
-    assert!(out.contains("GX0003"));
+    assert!(out.contains("GX0002"));
     assert!(out.contains("template literal started here but never closed"));
 }
 

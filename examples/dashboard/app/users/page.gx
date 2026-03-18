@@ -7,27 +7,27 @@ out ui UsersPage {
     title: "Users - Dashboard"
   }
 
-  <h1>"Users"</h1>
-  <p>"Manage application users."</p>
+  <h1>Users</h1>
+  <p>Manage application users.</p>
 
   <table>
     <thead>
       <tr>
-        <th>"Name"</th>
-        <th>"Email"</th>
-        <th>"Role"</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td>"Alice Johnson"</td>
-        <td>"alice@example.com"</td>
-        <td>"Admin"</td>
+        <td>Alice Johnson</td>
+        <td>alice@example.com</td>
+        <td>Admin</td>
       </tr>
       <tr>
-        <td>"Bob Smith"</td>
-        <td>"bob@example.com"</td>
-        <td>"User"</td>
+        <td>Bob Smith</td>
+        <td>bob@example.com</td>
+        <td>User</td>
       </tr>
     </tbody>
   </table>

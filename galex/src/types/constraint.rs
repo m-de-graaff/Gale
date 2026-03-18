@@ -19,6 +19,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 use super::ty::{TypeData, TypeId, TypeInterner, TypeVarId};
+use crate::errors::{codes, Diagnostic, ErrorCode, IntoDiagnostic};
 use crate::span::Span;
 
 // ── Constraint ─────────────────────────────────────────────────────────
@@ -53,6 +54,8 @@ pub struct Constraint {
 /// A type error discovered during constraint solving.
 #[derive(Debug, Clone)]
 pub struct TypeError {
+    /// The stable error code for this type error.
+    pub code: &'static ErrorCode,
     /// The expected type.
     pub expected: TypeId,
     /// The actual type found.
@@ -102,26 +105,38 @@ impl fmt::Display for TypeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.kind {
             TypeErrorKind::TypeMismatch => {
-                write!(f, "type mismatch: {}", self.context)
+                write!(
+                    f,
+                    "{}[{}]: type mismatch: {}",
+                    self.code.level, self.code, self.context
+                )
             }
             TypeErrorKind::NotAssignable => {
-                write!(f, "type not assignable: {}", self.context)
+                write!(
+                    f,
+                    "{}[{}]: type not assignable: {}",
+                    self.code.level, self.code, self.context
+                )
             }
             TypeErrorKind::OccursCheck => {
-                write!(f, "infinite type detected: {}", self.context)
+                write!(
+                    f,
+                    "{}[{}]: infinite type detected: {}",
+                    self.code.level, self.code, self.context
+                )
             }
             TypeErrorKind::ArityMismatch { expected, actual } => {
                 write!(
                     f,
-                    "expected {} parameter(s), found {}: {}",
-                    expected, actual, self.context
+                    "{}[{}]: expected {} parameter(s), found {}: {}",
+                    self.code.level, self.code, expected, actual, self.context
                 )
             }
             TypeErrorKind::TupleLengthMismatch { expected, actual } => {
                 write!(
                     f,
-                    "expected tuple of {} element(s), found {}: {}",
-                    expected, actual, self.context
+                    "{}[{}]: expected tuple of {} element(s), found {}: {}",
+                    self.code.level, self.code, expected, actual, self.context
                 )
             }
             TypeErrorKind::BoundaryViolation {
@@ -131,24 +146,44 @@ impl fmt::Display for TypeError {
             } => {
                 write!(
                     f,
-                    "boundary violation: cannot reference {} binding from {} scope: {}. {}",
-                    binding_scope, reference_scope, self.context, suggestion
+                    "{}[{}]: boundary violation: cannot reference {} binding from {} scope: {}. {}",
+                    self.code.level,
+                    self.code,
+                    binding_scope,
+                    reference_scope,
+                    self.context,
+                    suggestion
                 )
             }
             TypeErrorKind::NotSerializable => {
                 write!(
                     f,
-                    "not serializable: {} — data crossing the server/client boundary must be serializable",
-                    self.context
+                    "{}[{}]: not serializable: {} — data crossing the server/client boundary must be serializable",
+                    self.code.level, self.code, self.context
                 )
             }
             TypeErrorKind::InvalidExport { suggestion } => {
-                write!(f, "invalid export: {}. {}", self.context, suggestion)
+                write!(
+                    f,
+                    "{}[{}]: invalid export: {}. {}",
+                    self.code.level, self.code, self.context, suggestion
+                )
             }
             TypeErrorKind::InvalidEnvAccess => {
-                write!(f, "invalid env access: {}", self.context)
+                write!(
+                    f,
+                    "{}[{}]: invalid env access: {}",
+                    self.code.level, self.code, self.context
+                )
             }
         }
+    }
+}
+
+impl IntoDiagnostic for TypeError {
+    fn into_diagnostic(self) -> Diagnostic {
+        let message = format!("{}", self);
+        Diagnostic::with_message(self.code, message, self.span)
     }
 }
 
@@ -280,6 +315,7 @@ impl<'a> ConstraintSolver<'a> {
             (TypeData::TypeVar(var), _) => {
                 if self.occurs_check(*var, b) {
                     self.errors.push(TypeError {
+                        code: &codes::GX0314,
                         expected: b,
                         actual: a,
                         span,
@@ -293,6 +329,7 @@ impl<'a> ConstraintSolver<'a> {
             (_, TypeData::TypeVar(var)) => {
                 if self.occurs_check(*var, a) {
                     self.errors.push(TypeError {
+                        code: &codes::GX0314,
                         expected: a,
                         actual: b,
                         span,
@@ -333,6 +370,7 @@ impl<'a> ConstraintSolver<'a> {
             (TypeData::Tuple(elems_a), TypeData::Tuple(elems_b)) => {
                 if elems_a.len() != elems_b.len() {
                     self.errors.push(TypeError {
+                        code: &codes::GX0300,
                         expected: b,
                         actual: a,
                         span,
@@ -352,7 +390,13 @@ impl<'a> ConstraintSolver<'a> {
             // Function(P₁→R₁) = Function(P₂→R₂) → unify params + return
             (TypeData::Function(sig_a), TypeData::Function(sig_b)) => {
                 if sig_a.params.len() != sig_b.params.len() {
+                    let arity_code = if sig_a.params.len() < sig_b.params.len() {
+                        &codes::GX0304
+                    } else {
+                        &codes::GX0305
+                    };
                     self.errors.push(TypeError {
+                        code: arity_code,
                         expected: b,
                         actual: a,
                         span,
@@ -382,6 +426,7 @@ impl<'a> ConstraintSolver<'a> {
                         self.unify(fa.ty, fb.ty, span, context);
                     } else if !fb.optional {
                         self.errors.push(TypeError {
+                            code: &codes::GX0300,
                             expected: b,
                             actual: a,
                             span,
@@ -396,6 +441,7 @@ impl<'a> ConstraintSolver<'a> {
             _ => {
                 if a_data != b_data {
                     self.errors.push(TypeError {
+                        code: &codes::GX0300,
                         expected: b,
                         actual: a,
                         span,
@@ -430,6 +476,7 @@ impl<'a> ConstraintSolver<'a> {
                 let assignable = members.iter().any(|m| self.is_assignable_to(actual, *m));
                 if !assignable {
                     self.errors.push(TypeError {
+                        code: &codes::GX0301,
                         expected,
                         actual,
                         span,
@@ -446,6 +493,7 @@ impl<'a> ConstraintSolver<'a> {
                     // OK
                 } else {
                     self.errors.push(TypeError {
+                        code: &codes::GX0301,
                         expected,
                         actual,
                         span,
@@ -479,6 +527,7 @@ impl<'a> ConstraintSolver<'a> {
                         self.check_assignable(fa.ty, fb.ty, span, context);
                     } else if !fb.optional {
                         self.errors.push(TypeError {
+                            code: &codes::GX0301,
                             expected,
                             actual,
                             span,
@@ -496,6 +545,7 @@ impl<'a> ConstraintSolver<'a> {
                         self.check_assignable(gf.ty, of.ty, span, context);
                     } else if !of.optional {
                         self.errors.push(TypeError {
+                            code: &codes::GX0301,
                             expected,
                             actual,
                             span,
@@ -520,6 +570,7 @@ impl<'a> ConstraintSolver<'a> {
                         .any(|v| matches!(v, crate::types::validation::Validation::Optional))
                     {
                         self.errors.push(TypeError {
+                            code: &codes::GX0301,
                             expected,
                             actual,
                             span,
@@ -537,6 +588,7 @@ impl<'a> ConstraintSolver<'a> {
             _ => {
                 if actual_data != expected_data {
                     self.errors.push(TypeError {
+                        code: &codes::GX0301,
                         expected,
                         actual,
                         span,

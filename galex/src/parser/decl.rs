@@ -201,7 +201,8 @@ impl<'src> Parser<'src> {
 
     fn parse_validator_chain(&mut self) -> Vec<ValidatorCall> {
         let mut validators = Vec::new();
-        while self.eat(&Token::Dot).is_some() {
+        // Accept both `@name(args)` and `.name(args)` syntax for validators.
+        while self.eat(&Token::Dot).is_some() || self.eat(&Token::At).is_some() {
             let start = self.peek_span();
             let name = self.expect_ident("validator name");
             let args = if self.eat(&Token::LParen).is_some() {

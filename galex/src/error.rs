@@ -40,15 +40,30 @@ impl LexError {
     }
 
     /// Stable error code for this error kind (e.g. `"GX0001"`).
+    ///
+    /// Maps to the canonical codes defined in [`crate::errors::codes`].
     pub fn error_code(&self) -> &'static str {
         match self {
-            LexError::UnexpectedCharacter { .. } => "GX0001",
-            LexError::UnterminatedString { .. } => "GX0002",
-            LexError::UnterminatedTemplateLiteral { .. } => "GX0003",
-            LexError::UnterminatedBlockComment { .. } => "GX0004",
-            LexError::UnterminatedRegex { .. } => "GX0005",
-            LexError::InvalidEscapeSequence { .. } => "GX0006",
-            LexError::InvalidNumberLiteral { .. } => "GX0007",
+            LexError::UnterminatedString { .. } => "GX0001",
+            LexError::UnterminatedTemplateLiteral { .. } => "GX0002",
+            LexError::UnterminatedBlockComment { .. } => "GX0003",
+            LexError::InvalidEscapeSequence { .. } => "GX0004",
+            LexError::InvalidNumberLiteral { .. } => "GX0005",
+            LexError::UnexpectedCharacter { .. } => "GX0006",
+            LexError::UnterminatedRegex { .. } => "GX0009",
+        }
+    }
+
+    /// Get the corresponding [`ErrorCode`](crate::errors::ErrorCode) from `codes.rs`.
+    pub fn error_code_ref(&self) -> &'static crate::errors::ErrorCode {
+        match self {
+            LexError::UnterminatedString { .. } => &crate::errors::codes::GX0001,
+            LexError::UnterminatedTemplateLiteral { .. } => &crate::errors::codes::GX0002,
+            LexError::UnterminatedBlockComment { .. } => &crate::errors::codes::GX0003,
+            LexError::InvalidEscapeSequence { .. } => &crate::errors::codes::GX0004,
+            LexError::InvalidNumberLiteral { .. } => &crate::errors::codes::GX0005,
+            LexError::UnexpectedCharacter { .. } => &crate::errors::codes::GX0006,
+            LexError::UnterminatedRegex { .. } => &crate::errors::codes::GX0009,
         }
     }
 
@@ -98,6 +113,15 @@ impl fmt::Display for LexError {
 }
 
 impl std::error::Error for LexError {}
+
+impl crate::errors::IntoDiagnostic for LexError {
+    fn into_diagnostic(self) -> crate::errors::Diagnostic {
+        let code = self.error_code_ref();
+        let message = self.message();
+        let span = *self.span();
+        crate::errors::Diagnostic::with_message(code, message, span).with_hint(self.hint())
+    }
+}
 
 /// The result of lexing a source file.
 pub struct LexResult {
@@ -165,7 +189,7 @@ mod tests {
             span: Span::new(0, 10, 15, 2, 5),
         };
         let s = format!("{}", err);
-        assert!(s.contains("GX0002"));
+        assert!(s.contains("GX0001"));
         assert!(s.contains("unterminated string literal"));
     }
 

@@ -5,6 +5,7 @@ pub mod lockfile;
 pub mod package;
 pub mod resolve;
 pub mod tarball;
+pub mod validation;
 
 /// Package metadata from the registry.
 #[derive(Debug, Clone, serde::Deserialize)]

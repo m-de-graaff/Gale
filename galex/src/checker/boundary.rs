@@ -14,6 +14,7 @@
 
 use super::TypeChecker;
 use crate::ast::*;
+use crate::errors::codes;
 use crate::span::Span;
 use crate::types::constraint::{TypeError, TypeErrorKind};
 use crate::types::env::{Binding, BindingKind, BoundaryScope, ScopeKind};
@@ -99,6 +100,7 @@ impl TypeChecker {
                     return; // Action stubs are the bridge — client calls them as async RPCs
                 }
                 self.emit_error(TypeError {
+                    code: &codes::GX0500,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span: reference_span,
@@ -117,6 +119,7 @@ impl TypeChecker {
             // Server binding referenced from shared — not allowed
             (BoundaryScope::Server, BoundaryScope::Shared) => {
                 self.emit_error(TypeError {
+                    code: &codes::GX0502,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span: reference_span,
@@ -137,6 +140,7 @@ impl TypeChecker {
             // Client binding referenced from server — not allowed
             (BoundaryScope::Client, BoundaryScope::Server) => {
                 self.emit_error(TypeError {
+                    code: &codes::GX0501,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span: reference_span,
@@ -157,6 +161,7 @@ impl TypeChecker {
             // Client binding referenced from shared — not allowed
             (BoundaryScope::Client, BoundaryScope::Shared) => {
                 self.emit_error(TypeError {
+                    code: &codes::GX0503,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span: reference_span,
@@ -245,6 +250,7 @@ impl TypeChecker {
             // Actions cannot be declared inside client blocks
             (Item::ActionDecl(decl), ScopeKind::ClientBlock) => {
                 self.emit_error(TypeError {
+                    code: &codes::GX0512,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span: decl.span,
@@ -265,6 +271,7 @@ impl TypeChecker {
             // Queries cannot be declared inside client blocks
             (Item::QueryDecl(decl), ScopeKind::ClientBlock) => {
                 self.emit_error(TypeError {
+                    code: &codes::GX0511,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span: decl.span,
@@ -285,6 +292,7 @@ impl TypeChecker {
             // Components cannot be declared inside server blocks
             (Item::ComponentDecl(decl), ScopeKind::ServerBlock) => {
                 self.emit_error(TypeError {
+                    code: &codes::GX0501,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span: decl.span,
@@ -305,6 +313,7 @@ impl TypeChecker {
             // Layouts cannot be declared inside server blocks
             (Item::LayoutDecl(decl), ScopeKind::ServerBlock) => {
                 self.emit_error(TypeError {
+                    code: &codes::GX0501,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span: decl.span,
@@ -324,6 +333,7 @@ impl TypeChecker {
             // API routes cannot be declared inside client blocks
             (Item::ApiDecl(decl), ScopeKind::ClientBlock) => {
                 self.emit_error(TypeError {
+                    code: &codes::GX0500,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span: decl.span,
@@ -344,6 +354,7 @@ impl TypeChecker {
             // Middleware cannot be declared inside client blocks
             (Item::MiddlewareDecl(decl), ScopeKind::ClientBlock) => {
                 self.emit_error(TypeError {
+                    code: &codes::GX0500,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span: decl.span,
@@ -364,6 +375,7 @@ impl TypeChecker {
             // Env declarations cannot be inside client blocks
             (Item::EnvDecl(decl), ScopeKind::ClientBlock) => {
                 self.emit_error(TypeError {
+                    code: &codes::GX0517,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span: decl.span,
@@ -383,6 +395,7 @@ impl TypeChecker {
                 match stmt {
                     Stmt::Signal { name, span, .. } => {
                         self.emit_error(TypeError {
+                            code: &codes::GX0507,
                             expected: self.interner.void,
                             actual: self.interner.void,
                             span: *span,
@@ -401,6 +414,7 @@ impl TypeChecker {
                     }
                     Stmt::Derive { name, span, .. } => {
                         self.emit_error(TypeError {
+                            code: &codes::GX0508,
                             expected: self.interner.void,
                             actual: self.interner.void,
                             span: *span,
@@ -419,6 +433,7 @@ impl TypeChecker {
                     }
                     Stmt::RefDecl { name, span, .. } => {
                         self.emit_error(TypeError {
+                            code: &codes::GX0510,
                             expected: self.interner.void,
                             actual: self.interner.void,
                             span: *span,
@@ -458,6 +473,7 @@ impl TypeChecker {
         let current = self.env.current_boundary_scope();
         if matches!(current, BoundaryScope::Client) {
             self.emit_error(TypeError {
+                code: &codes::GX0517,
                 expected: self.interner.void,
                 actual: self.interner.void,
                 span,
@@ -496,6 +512,7 @@ impl TypeChecker {
             Item::ComponentDecl(decl) => {
                 if matches!(current, BoundaryScope::Server) {
                     self.emit_error(TypeError {
+                        code: &codes::GX0521,
                         expected: self.interner.void,
                         actual: self.interner.void,
                         span,
@@ -522,6 +539,7 @@ impl TypeChecker {
                         if let TypeData::Function(sig) = self.interner.get(fn_ty).clone() {
                             if !self.is_serializable(sig.ret) {
                                 self.emit_error(TypeError {
+                                    code: &codes::GX0504,
                                     expected: self.interner.void,
                                     actual: sig.ret,
                                     span,
@@ -543,6 +561,7 @@ impl TypeChecker {
             Item::StoreDecl(decl) => {
                 if matches!(current, BoundaryScope::Server) {
                     self.emit_error(TypeError {
+                        code: &codes::GX0521,
                         expected: self.interner.void,
                         actual: self.interner.void,
                         span,
@@ -562,6 +581,7 @@ impl TypeChecker {
             // Signals cannot be exported directly
             Item::Stmt(Stmt::Signal { name, .. }) => {
                 self.emit_error(TypeError {
+                    code: &codes::GX0521,
                     expected: self.interner.void,
                     actual: self.interner.void,
                     span,

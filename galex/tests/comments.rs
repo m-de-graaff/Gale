@@ -124,7 +124,7 @@ fn unterminated_string_recovers_with_correct_variant() {
         "expected UnterminatedString, got {:?}",
         errors[0]
     );
-    assert_eq!(errors[0].error_code(), "GX0002");
+    assert_eq!(errors[0].error_code(), "GX0001");
     // Recovery: lexer continues and finds `let x` on the next line
     assert!(toks.iter().any(|t| matches!(t, Token::Let)));
     assert!(toks
@@ -185,7 +185,7 @@ fn unexpected_character_correct_variant_and_recovery() {
         "expected UnexpectedCharacter('~'), got {:?}",
         errors[0]
     );
-    assert_eq!(errors[0].error_code(), "GX0001");
+    assert_eq!(errors[0].error_code(), "GX0006");
     assert!(toks.contains(&Token::Let));
     assert!(toks.contains(&Token::Ident("x".into())));
 }
@@ -215,7 +215,7 @@ fn invalid_hex_literal_correct_variant() {
         "expected InvalidNumberLiteral, got {:?}",
         errors
     );
-    assert_eq!(errors[0].error_code(), "GX0007");
+    assert_eq!(errors[0].error_code(), "GX0005");
     // Recovery: produces IntLit(0) and continues
     assert!(toks.iter().any(|t| matches!(t, Token::IntLit(0))));
     assert!(toks.iter().any(|t| matches!(t, Token::Let)));

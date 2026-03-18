@@ -8,18 +8,18 @@ out layout DocsLayout {
       <div>
         <nav>
           <div>
-            <a href="/">"GaleX Docs"</a>
+            <a href="/">GaleX Docs</a>
           </div>
           <ul>
-            <li><a href="/">"Getting Started"</a></li>
-            <li><a href="/reference">"Language Reference"</a></li>
-            <li><a href="/api">"API Reference"</a></li>
-            <li><a href="/guides/forms">"Forms"</a></li>
-            <li><a href="/guides/auth">"Authentication"</a></li>
-            <li><a href="/guides/database">"Database"</a></li>
-            <li><a href="/guides/realtime">"Real-time"</a></li>
-            <li><a href="/guides/deploying">"Deploying"</a></li>
-            <li><a href="/guides/migration">"Migration"</a></li>
+            <li><a href="/">Getting Started</a></li>
+            <li><a href="/reference">Language Reference</a></li>
+            <li><a href="/api">API Reference</a></li>
+            <li><a href="/guides/forms">Forms</a></li>
+            <li><a href="/guides/auth">Authentication</a></li>
+            <li><a href="/guides/database">Database</a></li>
+            <li><a href="/guides/realtime">Real-time</a></li>
+            <li><a href="/guides/deploying">Deploying</a></li>
+            <li><a href="/guides/migration">Migration</a></li>
           </ul>
         </nav>
         <main>

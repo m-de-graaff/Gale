@@ -7,32 +7,32 @@ out ui RealtimeGuide {
   }
 
   <article>
-    <h1>"Guide: Real-time with Channels"</h1>
+    <h1>Guide: Real-time with Channels</h1>
 
     <section>
-      <h2>"Overview"</h2>
-      <p>"GaleX channels provide WebSocket-based real-time communication between clients and the server. Channels support bidirectional messaging, auto-reconnect, and reactive state."</p>
+      <h2>Overview</h2>
+      <p>GaleX channels provide WebSocket-based real-time communication between clients and the server. Channels support bidirectional messaging, auto-reconnect, and reactive state.</p>
     </section>
 
     <section>
-      <h2>"Declaring a Channel"</h2>
+      <h2>Declaring a Channel</h2>
       <pre><code>"channel Notifications {\n  on connect {\n    // Client connected\n  }\n  on message(data: string) {\n    // Handle incoming message\n    broadcast(data)\n  }\n  on disconnect {\n    // Client disconnected\n  }\n}"</code></pre>
     </section>
 
     <section>
-      <h2>"Client-Side Usage"</h2>
-      <p>"Import and use the channel in a component:"</p>
+      <h2>Client-Side Usage</h2>
+      <p>Import and use the channel in a component:</p>
       <pre><code>"signal notifications = channel(\"Notifications\")\n\n// notifications.messages  - reactive signal\n// notifications.connected - connection state\n// notifications.send(msg) - send to server"</code></pre>
     </section>
 
     <section>
-      <h2>"Auto-Reconnect"</h2>
-      <p>"Channels automatically reconnect with exponential backoff. Starting at 1 second, doubling up to 30 seconds. The connected signal reflects the current state."</p>
+      <h2>Auto-Reconnect</h2>
+      <p>Channels automatically reconnect with exponential backoff. Starting at 1 second, doubling up to 30 seconds. The connected signal reflects the current state.</p>
     </section>
 
     <section>
-      <h2>"Channel Directions"</h2>
-      <p>"Channels can be bidirectional (default), server-to-client only, or client-to-server only. Specify the direction in the channel options."</p>
+      <h2>Channel Directions</h2>
+      <p>Channels can be bidirectional (default), server-to-client only, or client-to-server only. Specify the direction in the channel options.</p>
     </section>
   </article>
 }

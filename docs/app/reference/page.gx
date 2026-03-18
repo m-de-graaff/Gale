@@ -7,123 +7,123 @@ out ui LanguageReference {
   }
 
   <article>
-    <h1>"Language Reference"</h1>
+    <h1>Language Reference</h1>
 
     <section>
-      <h2>"File Structure"</h2>
-      <p>"A .gx file contains declarations at the top level. Each file can contain multiple items: components, guards, actions, channels, stores, enums, and type aliases."</p>
+      <h2>File Structure</h2>
+      <p>A .gx file contains declarations at the top level. Each file can contain multiple items: components, guards, actions, channels, stores, enums, and type aliases.</p>
     </section>
 
     <section>
-      <h2>"Components"</h2>
-      <p>"Components are the building blocks of a GaleX application."</p>
-      <h3>"Page Components"</h3>
-      <p>"Declared with out ui Name and placed in app/page.gx files:"</p>
+      <h2>Components</h2>
+      <p>Components are the building blocks of a GaleX application.</p>
+      <h3>Page Components</h3>
+      <p>Declared with out ui Name and placed in app/page.gx files:</p>
       <pre><code>"out ui HomePage {\n  head { title: \"Home\" }\n\n  &lt;h1&gt;\"Welcome\"&lt;/h1&gt;\n}"</code></pre>
 
-      <h3>"Layouts"</h3>
-      <p>"Declared with out layout Name. Must contain a slot for page injection:"</p>
+      <h3>Layouts</h3>
+      <p>Declared with out layout Name. Must contain a slot for page injection:</p>
       <pre><code>"out layout Root {\n  &lt;html&gt;\n    &lt;body&gt;\n      slot\n    &lt;/body&gt;\n  &lt;/html&gt;\n}"</code></pre>
     </section>
 
     <section>
-      <h2>"Reactivity"</h2>
-      <p>"GaleX uses fine-grained reactivity with signals and derived values."</p>
+      <h2>Reactivity</h2>
+      <p>GaleX uses fine-grained reactivity with signals and derived values.</p>
 
-      <h3>"signal"</h3>
-      <p>"A reactive value. When it changes, all dependents update automatically."</p>
+      <h3>signal</h3>
+      <p>A reactive value. When it changes, all dependents update automatically.</p>
       <pre><code>"signal count = 0\nsignal name = \"World\""</code></pre>
 
-      <h3>"derive"</h3>
-      <p>"A computed value that re-evaluates when its dependencies change."</p>
+      <h3>derive</h3>
+      <p>A computed value that re-evaluates when its dependencies change.</p>
       <pre><code>"derive doubled = count.get() * 2"</code></pre>
 
-      <h3>"effect"</h3>
-      <p>"A side effect that runs when its dependencies change."</p>
+      <h3>effect</h3>
+      <p>A side effect that runs when its dependencies change.</p>
       <pre><code>"effect {\n  console.log(count.get())\n}"</code></pre>
 
-      <h3>"watch"</h3>
-      <p>"Like effect but with explicit dependency tracking."</p>
+      <h3>watch</h3>
+      <p>Like effect but with explicit dependency tracking.</p>
 
-      <h3>"batch"</h3>
-      <p>"Groups multiple signal updates into a single re-render."</p>
+      <h3>batch</h3>
+      <p>Groups multiple signal updates into a single re-render.</p>
     </section>
 
     <section>
-      <h2>"Template Directives"</h2>
+      <h2>Template Directives</h2>
 
-      <h3>"when"</h3>
-      <p>"Conditional rendering:"</p>
+      <h3>when</h3>
+      <p>Conditional rendering:</p>
       <pre><code>"when isLoggedIn.get() {\n  &lt;p&gt;\"Welcome back!\"&lt;/p&gt;\n}"</code></pre>
 
-      <h3>"each"</h3>
-      <p>"List rendering:"</p>
+      <h3>each</h3>
+      <p>List rendering:</p>
       <pre><code>"each item in items.get() {\n  &lt;li&gt;{item.name}&lt;/li&gt;\n}"</code></pre>
 
-      <h3>"bind:"</h3>
-      <p>"Two-way data binding:"</p>
+      <h3>bind:</h3>
+      <p>Two-way data binding:</p>
       <pre><code>"&lt;input bind:value={name} /&gt;"</code></pre>
 
-      <h3>"on:"</h3>
-      <p>"Event handling with optional modifiers:"</p>
+      <h3>on:</h3>
+      <p>Event handling with optional modifiers:</p>
       <pre><code>"&lt;button on:click={handler}&gt;\"Click\"&lt;/button&gt;\n&lt;form on:submit.prevent={save}&gt;"</code></pre>
 
-      <h3>"class:"</h3>
-      <p>"Conditional CSS classes:"</p>
+      <h3>class:</h3>
+      <p>Conditional CSS classes:</p>
       <pre><code>"&lt;div class:active={isActive.get()}&gt;"</code></pre>
 
-      <h3>"transition:"</h3>
-      <p>"CSS transitions on mount/unmount:"</p>
+      <h3>transition:</h3>
+      <p>CSS transitions on mount/unmount:</p>
       <pre><code>"&lt;div transition:fade&gt;\"Animated\"&lt;/div&gt;"</code></pre>
     </section>
 
     <section>
-      <h2>"Server Declarations"</h2>
+      <h2>Server Declarations</h2>
 
-      <h3>"guard"</h3>
-      <p>"Typed form validation:"</p>
+      <h3>guard</h3>
+      <p>Typed form validation:</p>
       <pre><code>"guard LoginForm {\n  email: string\n  password: string\n}"</code></pre>
 
-      <h3>"action"</h3>
-      <p>"Server-side mutations:"</p>
+      <h3>action</h3>
+      <p>Server-side mutations:</p>
       <pre><code>"action createUser(name: string) {\n  // Server-side code\n}"</code></pre>
 
-      <h3>"channel"</h3>
-      <p>"WebSocket communication:"</p>
+      <h3>channel</h3>
+      <p>WebSocket communication:</p>
       <pre><code>"channel Chat {\n  on message(msg: string) {\n    broadcast(msg)\n  }\n}"</code></pre>
 
-      <h3>"store"</h3>
-      <p>"Shared reactive state across components."</p>
+      <h3>store</h3>
+      <p>Shared reactive state across components.</p>
 
-      <h3>"middleware"</h3>
-      <p>"Request/response interceptors for route groups."</p>
+      <h3>middleware</h3>
+      <p>Request/response interceptors for route groups.</p>
     </section>
 
     <section>
-      <h2>"Type System"</h2>
-      <p>"GaleX has a structural type system with inference."</p>
+      <h2>Type System</h2>
+      <p>GaleX has a structural type system with inference.</p>
 
-      <h3>"Primitives"</h3>
+      <h3>Primitives</h3>
       <pre><code>"int, float, string, bool"</code></pre>
 
-      <h3>"Optional"</h3>
+      <h3>Optional</h3>
       <pre><code>"let name: string? = null"</code></pre>
 
-      <h3>"Arrays"</h3>
+      <h3>Arrays</h3>
       <pre><code>"let items: string[] = [\"a\", \"b\"]"</code></pre>
 
-      <h3>"Enums"</h3>
+      <h3>Enums</h3>
       <pre><code>"enum Status { Active, Inactive, Pending }"</code></pre>
 
-      <h3>"Boundary Blocks"</h3>
+      <h3>Boundary Blocks</h3>
       <pre><code>"server { /* server-only */ }\nclient { /* client-only */ }\nshared { /* both sides */ }"</code></pre>
     </section>
 
     <section>
-      <h2>"Routing"</h2>
-      <p>"Routing is file-based. Files named page.gx define routes:"</p>
+      <h2>Routing</h2>
+      <p>Routing is file-based. Files named page.gx define routes:</p>
       <pre><code>"app/page.gx          -> /\napp/about/page.gx     -> /about\napp/blog/[slug]/page.gx -> /blog/:slug"</code></pre>
-      <p>"Dynamic segments use brackets: [param]. Layout files (layout.gx) wrap all pages in their directory."</p>
+      <p>Dynamic segments use brackets: [param]. Layout files (layout.gx) wrap all pages in their directory.</p>
     </section>
   </article>
 }

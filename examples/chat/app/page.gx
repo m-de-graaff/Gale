@@ -12,27 +12,27 @@ out ui ChatRoom {
   signal username = "Anonymous"
 
   <main>
-    <h1>"Chat Room"</h1>
-    <p>"Real-time messaging powered by GaleX WebSocket channels."</p>
+    <h1>Chat Room</h1>
+    <p>Real-time messaging powered by GaleX WebSocket channels.</p>
 
     <section>
-      <h2>"How it works"</h2>
+      <h2>How it works</h2>
       <ul>
-        <li>"WebSocket channels for bidirectional communication"</li>
-        <li>"Reactive signals for automatic UI updates"</li>
-        <li>"Auto-reconnect with exponential backoff"</li>
-        <li>"Server-side message broadcasting"</li>
+        <li>WebSocket channels for bidirectional communication</li>
+        <li>Reactive signals for automatic UI updates</li>
+        <li>Auto-reconnect with exponential backoff</li>
+        <li>Server-side message broadcasting</li>
       </ul>
     </section>
 
     <section>
-      <h2>"Messages"</h2>
+      <h2>Messages</h2>
       <div>
-        <p>"No messages yet. Start the conversation!"</p>
+        <p>No messages yet. Start the conversation!</p>
       </div>
       <div>
         <input type="text" placeholder="Type a message..." />
-        <button>"Send"</button>
+        <button>Send</button>
       </div>
     </section>
   </main>

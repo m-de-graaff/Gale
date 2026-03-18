@@ -420,7 +420,18 @@ impl RebuildManager {
     }
 
     /// Format parse errors into DevError structs.
+    ///
+    /// Uses the raw lex/parse errors when available to include structured
+    /// error codes, or falls back to formatted strings.
     fn format_parse_errors(&self) -> Vec<DevError> {
+        let diagnostics = self.compiler.parse_diagnostics();
+        if !diagnostics.is_empty() {
+            return diagnostics
+                .iter()
+                .map(|d| self.diagnostic_to_dev_error(d))
+                .collect();
+        }
+        // Fallback to formatted strings
         self.compiler
             .parse_errors
             .iter()
@@ -450,6 +461,32 @@ impl RebuildManager {
                 suggestion: None,
             })
             .collect()
+    }
+
+    /// Convert a unified [`Diagnostic`](crate::errors::Diagnostic) to a [`DevError`].
+    fn diagnostic_to_dev_error(&self, d: &crate::errors::Diagnostic) -> DevError {
+        let file = self
+            .compiler
+            .file_table
+            .get_path(d.span.file_id)
+            .map(|p| p.display().to_string())
+            .unwrap_or_default();
+
+        let source_line = self.compiler.sources.get(&d.span.file_id).and_then(|src| {
+            src.lines()
+                .nth(d.span.line.saturating_sub(1) as usize)
+                .map(|l| l.to_string())
+        });
+
+        DevError {
+            file,
+            line: d.span.line,
+            col: d.span.col,
+            message: d.message.clone(),
+            code: Some(d.code.as_str()),
+            source_line,
+            suggestion: d.help.clone().or_else(|| d.hint.clone()),
+        }
     }
 }
 

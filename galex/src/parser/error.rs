@@ -64,3 +64,17 @@ impl std::fmt::Display for ParseError {
         write!(f, "{}", self.message)
     }
 }
+
+impl crate::errors::IntoDiagnostic for ParseError {
+    fn into_diagnostic(self) -> crate::errors::Diagnostic {
+        let code = match &self.kind {
+            ParseErrorKind::UnexpectedToken { .. } => &crate::errors::codes::GX0100,
+            ParseErrorKind::UnexpectedEof { .. } => &crate::errors::codes::GX0101,
+            ParseErrorKind::InvalidExpression => &crate::errors::codes::GX0115,
+            ParseErrorKind::InvalidStatement => &crate::errors::codes::GX0100,
+            ParseErrorKind::InvalidDeclaration => &crate::errors::codes::GX0100,
+            ParseErrorKind::InvalidTemplate => &crate::errors::codes::GX0111,
+        };
+        crate::errors::Diagnostic::with_message(code, self.message, self.span)
+    }
+}

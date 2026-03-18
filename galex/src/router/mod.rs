@@ -21,6 +21,7 @@
 //! - `middleware.gx` — middleware for this segment
 
 pub mod discovery;
+pub mod validation;
 
 use std::path::PathBuf;
 

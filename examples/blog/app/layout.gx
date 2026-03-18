@@ -6,8 +6,8 @@ out layout Root {
     </head>
     <body>
       <nav>
-        <a href="/">"Blog"</a>
-        <a href="/posts/hello-world">"First Post"</a>
+        <a href="/">Blog</a>
+        <a href="/posts/hello-world">First Post</a>
       </nav>
       slot
     </body>

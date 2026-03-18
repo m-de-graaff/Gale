@@ -12,17 +12,17 @@ out ui TodoApp {
   signal count = 0
 
   <main>
-    <h1>"Todo App"</h1>
-    <p>"A simple GaleX application with server-side rendering."</p>
+    <h1>Todo App</h1>
+    <p>A simple GaleX application with server-side rendering.</p>
 
     <section>
-      <h2>"Features demonstrated"</h2>
+      <h2>Features demonstrated</h2>
       <ul>
-        <li>"File-based routing (this page is app/page.gx)"</li>
-        <li>"Layout composition (app/layout.gx wraps this page)"</li>
-        <li>"Head metadata (title, description)"</li>
-        <li>"Reactive signals (count = 0)"</li>
-        <li>"Server-side rendering (HTML generated on server)"</li>
+        <li>File-based routing (this page is app/page.gx)</li>
+        <li>Layout composition (app/layout.gx wraps this page)</li>
+        <li>Head metadata (title, description)</li>
+        <li>Reactive signals (count = 0)</li>
+        <li>Server-side rendering (HTML generated on server)</li>
       </ul>
     </section>
   </main>

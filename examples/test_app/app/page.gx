@@ -1,3 +1,8 @@
+guard TodoInput {
+  text: string @minLen(1) @maxLen(200)
+  email: string @email
+}
+
 out ui HomePage {
   head {
     title: "Test App"
@@ -5,8 +10,6 @@ out ui HomePage {
 
   <main>
     <h1>Hello from GaleX!</h1>
-    <p>This is unquoted text and it just works.</p>
-    <p>"This is quoted text and still works too."</p>
-    <a href="/">Back home</a>
+    <p>This page has a guard with @minLen, @maxLen, and @email validators.</p>
   </main>
 }

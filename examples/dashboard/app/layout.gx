@@ -8,9 +8,9 @@ out layout Root {
       <div>
         <aside>
           <nav>
-            <a href="/">"Overview"</a>
-            <a href="/users">"Users"</a>
-            <a href="/settings">"Settings"</a>
+            <a href="/">Overview</a>
+            <a href="/users">Users</a>
+            <a href="/settings">Settings</a>
           </nav>
         </aside>
         <main>

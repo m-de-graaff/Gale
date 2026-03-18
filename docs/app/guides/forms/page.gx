@@ -7,34 +7,34 @@ out ui FormsGuide {
   }
 
   <article>
-    <h1>"Guide: Forms and Validation"</h1>
+    <h1>Guide: Forms and Validation</h1>
 
     <section>
-      <h2>"Overview"</h2>
-      <p>"GaleX uses guards for type-safe form validation. Guards define the shape and constraints of form data. When a form is submitted, the guard validates input on the server before your action code runs."</p>
+      <h2>Overview</h2>
+      <p>GaleX uses guards for type-safe form validation. Guards define the shape and constraints of form data. When a form is submitted, the guard validates input on the server before your action code runs.</p>
     </section>
 
     <section>
-      <h2>"Defining a Guard"</h2>
-      <p>"A guard declaration specifies fields with types and optional validators:"</p>
+      <h2>Defining a Guard</h2>
+      <p>A guard declaration specifies fields with types and optional validators:</p>
       <pre><code>"guard ContactForm {\n  name: string\n  email: string\n  message: string\n}"</code></pre>
     </section>
 
     <section>
-      <h2>"Using Guards with Actions"</h2>
-      <p>"Actions receive validated guard data:"</p>
+      <h2>Using Guards with Actions</h2>
+      <p>Actions receive validated guard data:</p>
       <pre><code>"action submitContact(form: ContactForm) {\n  // form.name, form.email, form.message\n  // are guaranteed to pass validation\n}"</code></pre>
     </section>
 
     <section>
-      <h2>"Connecting to Forms"</h2>
-      <p>"Use the action directive on a form element:"</p>
+      <h2>Connecting to Forms</h2>
+      <p>Use the action directive on a form element:</p>
       <pre><code>"&lt;form action={submitContact}&gt;\n  &lt;input name=\"name\" /&gt;\n  &lt;input name=\"email\" type=\"email\" /&gt;\n  &lt;textarea name=\"message\"&gt;&lt;/textarea&gt;\n  &lt;button type=\"submit\"&gt;\"Send\"&lt;/button&gt;\n&lt;/form&gt;"</code></pre>
     </section>
 
     <section>
-      <h2>"Error Handling"</h2>
-      <p>"When validation fails, a GaleValidationError is thrown on the client. You can catch it and display field-specific errors to the user."</p>
+      <h2>Error Handling</h2>
+      <p>When validation fails, a GaleValidationError is thrown on the client. You can catch it and display field-specific errors to the user.</p>
     </section>
   </article>
 }

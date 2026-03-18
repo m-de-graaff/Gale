@@ -7,57 +7,57 @@ out ui GettingStarted {
   }
 
   <article>
-    <h1>"Getting Started with GaleX"</h1>
+    <h1>Getting Started with GaleX</h1>
 
     <section>
-      <h2>"What is GaleX?"</h2>
-      <p>"GaleX is a type-safe, reactive web framework that compiles to Rust. You write .gx files containing components, server logic, and type declarations. The compiler generates a native binary that serves your app with server-side rendering and a sub-3KB client runtime."</p>
+      <h2>What is GaleX?</h2>
+      <p>GaleX is a type-safe, reactive web framework that compiles to Rust. You write .gx files containing components, server logic, and type declarations. The compiler generates a native binary that serves your app with server-side rendering and a sub-3KB client runtime.</p>
     </section>
 
     <section>
-      <h2>"Installation"</h2>
-      <p>"GaleX requires the Rust toolchain. Install it from rustup.rs, then:"</p>
+      <h2>Installation</h2>
+      <p>GaleX requires the Rust toolchain. Install it from rustup.rs, then:</p>
       <pre><code>"cargo install galex"</code></pre>
     </section>
 
     <section>
-      <h2>"Create a Project"</h2>
+      <h2>Create a Project</h2>
       <pre><code>"gale new my-app\ncd my-app"</code></pre>
-      <p>"This creates a project with a layout, home page, and config file."</p>
+      <p>This creates a project with a layout, home page, and config file.</p>
     </section>
 
     <section>
-      <h2>"Development"</h2>
+      <h2>Development</h2>
       <pre><code>"gale dev"</code></pre>
-      <p>"Starts a development server with hot reload and an error overlay. Open http://localhost:3000 in your browser."</p>
+      <p>Starts a development server with hot reload and an error overlay. Open http://localhost:3000 in your browser.</p>
     </section>
 
     <section>
-      <h2>"Project Structure"</h2>
+      <h2>Project Structure</h2>
       <pre><code>"my-app/\n  galex.toml         # Configuration\n  app/\n    layout.gx        # Root layout\n    page.gx          # Home page (/)\n    about/\n      page.gx        # About page (/about)\n  styles/\n    global.css       # Tailwind entry\n  public/\n    favicon.ico      # Static assets"</code></pre>
     </section>
 
     <section>
-      <h2>"Your First Component"</h2>
-      <p>"A .gx file contains a component declaration with optional head metadata and a template:"</p>
+      <h2>Your First Component</h2>
+      <p>A .gx file contains a component declaration with optional head metadata and a template:</p>
       <pre><code>"out ui MyPage {\n  head {\n    title: \"My Page\"\n  }\n\n  signal count = 0\n\n  &lt;h1&gt;\"Hello, GaleX!\"&lt;/h1&gt;\n  &lt;p&gt;\"Edit app/page.gx to get started.\"&lt;/p&gt;\n}"</code></pre>
     </section>
 
     <section>
-      <h2>"Build for Production"</h2>
+      <h2>Build for Production</h2>
       <pre><code>"gale build --release"</code></pre>
-      <p>"This compiles your app into a single optimized binary. The output is in the dist/ directory."</p>
+      <p>This compiles your app into a single optimized binary. The output is in the dist/ directory.</p>
       <pre><code>"gale serve"</code></pre>
-      <p>"Runs the production binary from dist/."</p>
+      <p>Runs the production binary from dist/.</p>
     </section>
 
     <section>
-      <h2>"Next Steps"</h2>
+      <h2>Next Steps</h2>
       <ul>
-        <li><a href="/reference">"Language Reference"</a>" - Every keyword and syntax construct"</li>
-        <li><a href="/api">"API Reference"</a>" - Guards, queries, channels, stores"</li>
-        <li><a href="/guides/forms">"Forms Guide"</a>" - Form validation with guards"</li>
-        <li><a href="/guides/deploying">"Deployment Guide"</a>" - Docker, production config"</li>
+        <li><a href="/reference">Language Reference</a> - Every keyword and syntax construct</li>
+        <li><a href="/api">API Reference</a> - Guards, queries, channels, stores</li>
+        <li><a href="/guides/forms">Forms Guide</a> - Form validation with guards</li>
+        <li><a href="/guides/deploying">Deployment Guide</a> - Docker, production config</li>
       </ul>
     </section>
   </article>

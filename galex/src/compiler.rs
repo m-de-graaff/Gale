@@ -8,7 +8,10 @@ use std::path::{Path, PathBuf};
 
 use crate::ast::Program;
 use crate::checker::TypeChecker;
-use crate::parser::{self, ParseResult};
+use crate::error::LexError;
+use crate::errors::{Diagnostic, IntoDiagnostic};
+use crate::parser;
+use crate::parser::error::ParseError;
 use crate::router::DiscoveredRoute;
 use crate::span::{FileTable, Span};
 use crate::types::ty::TypeInterner;
@@ -24,8 +27,12 @@ pub struct Compiler {
     pub sources: HashMap<u32, String>,
     /// Parsed programs indexed by file ID.
     pub programs: Vec<(u32, Program)>,
-    /// Parse errors accumulated from all files.
+    /// Parse errors accumulated from all files (formatted strings for backward compat).
     pub parse_errors: Vec<String>,
+    /// Raw lex errors per file (file_id, errors).
+    pub lex_errors: Vec<(u32, Vec<LexError>)>,
+    /// Raw parse errors from all files.
+    pub raw_parse_errors: Vec<ParseError>,
     /// Discovered routes (populated by `set_routes`).
     pub routes: Vec<DiscoveredRoute>,
 }
@@ -38,6 +45,8 @@ impl Compiler {
             sources: HashMap::new(),
             programs: Vec::new(),
             parse_errors: Vec::new(),
+            lex_errors: Vec::new(),
+            raw_parse_errors: Vec::new(),
             routes: Vec::new(),
         }
     }
@@ -56,6 +65,8 @@ impl Compiler {
     pub fn parse_all(&mut self) -> usize {
         self.programs.clear();
         self.parse_errors.clear();
+        self.lex_errors.clear();
+        self.raw_parse_errors.clear();
 
         let file_ids: Vec<u32> = self.sources.keys().copied().collect();
         for file_id in file_ids {
@@ -69,6 +80,12 @@ impl Compiler {
                 let loc = self.file_table.format_span(&err.span);
                 self.parse_errors.push(format!("{loc}: {err}"));
             }
+            // Store raw errors for structured diagnostic output
+            if !result.lex_errors.is_empty() {
+                self.lex_errors.push((file_id, result.lex_errors.clone()));
+            }
+            self.raw_parse_errors.extend(result.parse_errors.clone());
+
             self.programs.push((file_id, result.program));
         }
 
@@ -108,6 +125,79 @@ impl Compiler {
         let merged = self.merge_programs();
         let mut checker = TypeChecker::new();
         checker.check_program(&merged)
+    }
+
+    /// Convert lex and parse errors from stored raw errors into Diagnostics.
+    pub fn parse_diagnostics(&self) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+
+        for (_file_id, lex_errs) in &self.lex_errors {
+            for err in lex_errs {
+                diagnostics.push(err.clone().into_diagnostic());
+            }
+        }
+
+        for err in &self.raw_parse_errors {
+            diagnostics.push(err.clone().into_diagnostic());
+        }
+
+        diagnostics
+    }
+
+    /// Run all validation phases and return unified diagnostics.
+    ///
+    /// This runs:
+    /// 1. Type checking (produces TypeErrors -> converted to Diagnostics)
+    /// 2. Lint rules (produces LintWarnings -> converted to Diagnostics)
+    /// 3. Guard validation (GX0600-GX0632)
+    /// 4. Import validation (GX0800-GX0809)
+    /// 5. Action/query/channel validation (GX0900-GX0913)
+    /// 6. Store validation (GX1000-GX1006)
+    /// 7. Env validation (GX1100-GX1108)
+    /// 8. Middleware validation (GX1300-GX1304)
+    /// 9. Head/SEO validation (GX1400-GX1408)
+    /// 10. Form validation (GX1500-GX1507)
+    /// 11. Reactivity validation (GX1600-GX1610)
+    pub fn check_all(&self) -> Vec<Diagnostic> {
+        let merged = self.merge_programs();
+        let mut diagnostics = Vec::new();
+
+        // Phase 1: Type checking
+        let mut checker = TypeChecker::new();
+        let type_errors = checker.check_program(&merged);
+        for err in type_errors {
+            diagnostics.push(err.into_diagnostic());
+        }
+
+        // Collect template diagnostics from type checker
+        diagnostics.append(&mut checker.template_diagnostics);
+
+        // Phase 2: Lint rules
+        let lint_warnings = crate::lint::lint_program(&merged);
+        for warn in lint_warnings {
+            diagnostics.push(warn.into_diagnostic());
+        }
+
+        // Phase 3: Guard validation (GX0600-GX0632)
+        crate::checker::guard::validate_guards(&merged, &mut diagnostics);
+
+        // Phase 4: Import validation (GX0800-GX0809)
+        diagnostics.extend(crate::checker::imports::validate_imports(&merged));
+
+        // Phase 5: Action/query/channel validation (GX0900-GX0913)
+        diagnostics.extend(crate::checker::action::validate_actions(&merged));
+
+        // Phase 6: Store validation (GX1000-GX1006)
+        diagnostics.extend(crate::checker::store::validate_stores(&merged));
+
+        // Phase 7: Env validation (GX1100-GX1108)
+        diagnostics.extend(crate::checker::env::validate_env_decls(&merged));
+
+        // Phase 8-10: head, form — already run during type checking or need component context
+        // Phase 11: Reactivity validation (GX1600-GX1610)
+        diagnostics.extend(crate::checker::reactivity::validate_reactivity(&merged));
+
+        diagnostics
     }
 
     /// Run code generation on the merged program.
