@@ -68,10 +68,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p staging/sdk staging/raw
+          mkdir -p staging/sdk
           cp "target/${{ matrix.target }}/release/gale${{ matrix.ext }}" "staging/sdk/gale${{ matrix.ext }}"
           cp "target/${{ matrix.target }}/release/gale-lsp${{ matrix.ext }}" "staging/sdk/gale-lsp${{ matrix.ext }}"
-          cp "target/${{ matrix.target }}/release/gale-lsp${{ matrix.ext }}" "staging/raw/${{ matrix.raw_lsp_name }}"
+          cp "target/${{ matrix.target }}/release/gale-lsp${{ matrix.ext }}" "${{ matrix.raw_lsp_name }}"
 
       - name: Package tar.gz artifacts
         if: matrix.archive_ext == 'tar.gz'
@@ -98,7 +98,7 @@ jobs:
           path: |
             gale-sdk-${{ matrix.suffix }}.*
             gale-server-${{ matrix.suffix }}.*
-            staging/raw/${{ matrix.raw_lsp_name }}
+            ${{ matrix.raw_lsp_name }}
           if-no-files-found: error
 
   editor-artifacts:
@@ -179,7 +179,7 @@ jobs:
         run: |
           set -euo pipefail
           cd artifacts
-          sha256sum * > checksums.txt
+          find . -maxdepth 1 -type f | sort | xargs sha256sum > checksums.txt
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
