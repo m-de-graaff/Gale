@@ -23,7 +23,11 @@ pub async fn path_security_middleware(
     let raw_path = request.uri().path();
 
     validate_path(raw_path, &state).map_err(|status| {
-        tracing::warn!(status = status.as_u16(), path = raw_path, "request rejected by path security");
+        tracing::warn!(
+            status = status.as_u16(),
+            path = raw_path,
+            "request rejected by path security"
+        );
         ErrorResponse::new(status)
     })?;
 
@@ -175,12 +179,18 @@ mod tests {
 
     #[test]
     fn rejects_dot_dot_slash() {
-        assert_eq!(validate_path("/../etc/passwd", &state()), Err(StatusCode::FORBIDDEN));
+        assert_eq!(
+            validate_path("/../etc/passwd", &state()),
+            Err(StatusCode::FORBIDDEN)
+        );
     }
 
     #[test]
     fn rejects_encoded_traversal() {
-        assert_eq!(validate_path("/%2e%2e/etc/passwd", &state()), Err(StatusCode::FORBIDDEN));
+        assert_eq!(
+            validate_path("/%2e%2e/etc/passwd", &state()),
+            Err(StatusCode::FORBIDDEN)
+        );
     }
 
     #[test]
@@ -194,7 +204,10 @@ mod tests {
 
     #[test]
     fn rejects_backslash_traversal() {
-        assert_eq!(validate_path("/..\\etc\\passwd", &state()), Err(StatusCode::FORBIDDEN));
+        assert_eq!(
+            validate_path("/..\\etc\\passwd", &state()),
+            Err(StatusCode::FORBIDDEN)
+        );
     }
 
     #[test]
@@ -209,12 +222,18 @@ mod tests {
 
     #[test]
     fn rejects_null_byte_encoded() {
-        assert_eq!(validate_path("/file%00.txt", &state()), Err(StatusCode::BAD_REQUEST));
+        assert_eq!(
+            validate_path("/file%00.txt", &state()),
+            Err(StatusCode::BAD_REQUEST)
+        );
     }
 
     #[test]
     fn rejects_null_byte_literal() {
-        assert_eq!(validate_path("/file\0.txt", &state()), Err(StatusCode::BAD_REQUEST));
+        assert_eq!(
+            validate_path("/file\0.txt", &state()),
+            Err(StatusCode::BAD_REQUEST)
+        );
     }
 
     // --- Dotfiles ---
@@ -258,7 +277,10 @@ mod tests {
     #[cfg(windows)]
     #[test]
     fn rejects_reserved_device_con_with_ext() {
-        assert_eq!(validate_path("/CON.txt", &state()), Err(StatusCode::FORBIDDEN));
+        assert_eq!(
+            validate_path("/CON.txt", &state()),
+            Err(StatusCode::FORBIDDEN)
+        );
     }
 
     #[cfg(windows)]

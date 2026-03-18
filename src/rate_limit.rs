@@ -157,16 +157,14 @@ pub async fn rate_limit_middleware(
         AcquireResult::RateLimited { retry_after_secs } => {
             tracing::warn!(%ip, "rate limited");
             let mut response = ErrorResponse::new(StatusCode::TOO_MANY_REQUESTS).into_response();
-            response.headers_mut().insert(
-                "retry-after",
-                retry_after_secs.to_string().parse().unwrap(),
-            );
+            response
+                .headers_mut()
+                .insert("retry-after", retry_after_secs.to_string().parse().unwrap());
             response
         }
         AcquireResult::ConnectionLimitExceeded => {
             tracing::warn!(%ip, "connection limit exceeded");
-            let mut response =
-                ErrorResponse::new(StatusCode::SERVICE_UNAVAILABLE).into_response();
+            let mut response = ErrorResponse::new(StatusCode::SERVICE_UNAVAILABLE).into_response();
             response
                 .headers_mut()
                 .insert("retry-after", "1".parse().unwrap());
@@ -209,8 +207,7 @@ mod tests {
             // Decrement active_connections so connection limit doesn't interfere
             match try_acquire(&state.inner, ip) {
                 AcquireResult::Allowed => {
-                    let mut clients =
-                        state.inner.clients.lock().unwrap();
+                    let mut clients = state.inner.clients.lock().unwrap();
                     clients.get_mut(&ip).unwrap().active_connections -= 1;
                 }
                 _ => panic!("request {i} should be allowed"),

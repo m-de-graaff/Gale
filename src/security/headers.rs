@@ -1,7 +1,7 @@
 use axum::body::Body;
 use axum::extract::State;
 use axum::http::header::HeaderValue;
-use axum::http::{Request, header};
+use axum::http::{header, Request};
 use axum::middleware::Next;
 use axum::response::Response;
 
@@ -80,7 +80,10 @@ pub async fn security_headers_middleware(
     if let Some(ref val) = state.x_frame_options {
         headers.insert(header::X_FRAME_OPTIONS, val.clone());
     }
-    headers.insert(header::HeaderName::from_static("x-xss-protection"), state.x_xss_protection.clone());
+    headers.insert(
+        header::HeaderName::from_static("x-xss-protection"),
+        state.x_xss_protection.clone(),
+    );
     if let Some(ref val) = state.referrer_policy {
         headers.insert(header::REFERRER_POLICY, val.clone());
     }
@@ -134,7 +137,10 @@ mod tests {
         assert_eq!(state.hsts.unwrap(), "max-age=31536000; includeSubDomains");
         assert_eq!(state.x_content_type_options.unwrap(), "nosniff");
         assert_eq!(state.x_frame_options.unwrap(), "DENY");
-        assert_eq!(state.referrer_policy.unwrap(), "strict-origin-when-cross-origin");
+        assert_eq!(
+            state.referrer_policy.unwrap(),
+            "strict-origin-when-cross-origin"
+        );
         assert_eq!(
             state.permissions_policy.unwrap(),
             "camera=(), microphone=(), geolocation=()"

@@ -44,9 +44,7 @@ pub fn validate_tls_config(config: &TlsConfig) {
     }
 }
 
-pub async fn build_rustls_config(
-    config: &TlsConfig,
-) -> axum_server::tls_rustls::RustlsConfig {
+pub async fn build_rustls_config(config: &TlsConfig) -> axum_server::tls_rustls::RustlsConfig {
     axum_server::tls_rustls::RustlsConfig::from_pem_file(&config.cert, &config.key)
         .await
         .unwrap_or_else(|e| {
@@ -91,8 +89,7 @@ pub async fn build_acme_rustls_config(
     let mut acme_state = acme_config.state();
     let server_config = acme_state.default_rustls_config();
 
-    let axum_rustls_config =
-        axum_server::tls_rustls::RustlsConfig::from_config(server_config);
+    let axum_rustls_config = axum_server::tls_rustls::RustlsConfig::from_config(server_config);
 
     if config.acme_production {
         tracing::info!(
@@ -168,9 +165,7 @@ pub fn spawn_cert_reload_task(
 }
 
 fn file_mtime(path: &str) -> Option<SystemTime> {
-    std::fs::metadata(path)
-        .ok()
-        .and_then(|m| m.modified().ok())
+    std::fs::metadata(path).ok().and_then(|m| m.modified().ok())
 }
 
 pub fn redirect_router(https_port: u16) -> Router {
@@ -194,10 +189,7 @@ fn redirect_to_https(host: &str, uri: &Uri, https_port: u16) -> Response {
         format!("{host_without_port}:{https_port}")
     };
 
-    let path_and_query = uri
-        .path_and_query()
-        .map(|pq| pq.as_str())
-        .unwrap_or("/");
+    let path_and_query = uri.path_and_query().map(|pq| pq.as_str()).unwrap_or("/");
 
     let location = format!("https://{authority}{path_and_query}");
 
@@ -245,10 +237,7 @@ mod tests {
     fn redirect_preserves_path_and_query() {
         let uri = "/a/b?x=1&y=2".parse::<Uri>().unwrap();
         let resp = redirect_to_https("example.com", &uri, 443);
-        assert_eq!(
-            response_location(&resp),
-            "https://example.com/a/b?x=1&y=2"
-        );
+        assert_eq!(response_location(&resp), "https://example.com/a/b?x=1&y=2");
     }
 
     #[test]

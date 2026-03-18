@@ -1,15 +1,15 @@
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 use gale_lib::cache::extract_extension;
 use gale_lib::compression::ShouldCompress;
 use gale_lib::config::CompressionConfig;
 use gale_lib::logging::{days_to_civil, format_clf_timestamp};
 use gale_lib::mime_types;
-use gale_lib::security::path::{PathSecurityState, validate_path};
+use gale_lib::security::path::{validate_path, PathSecurityState};
 use gale_lib::static_files::health_handler;
 
 use axum::body::Body;
-use axum::http::{Response, StatusCode, header};
+use axum::http::{header, Response, StatusCode};
 
 // ---------------------------------------------------------------------------
 // Group 1: Path security validation
@@ -28,12 +28,7 @@ fn bench_path_security(c: &mut Criterion) {
     });
 
     group.bench_function("clean_deep", |b| {
-        b.iter(|| {
-            validate_path(
-                black_box("/assets/css/vendor/bootstrap/main.css"),
-                &state,
-            )
-        })
+        b.iter(|| validate_path(black_box("/assets/css/vendor/bootstrap/main.css"), &state))
     });
 
     group.bench_function("percent_encoded", |b| {
@@ -180,9 +175,7 @@ fn bench_cache_extension(c: &mut Criterion) {
 fn bench_logging_timestamp(c: &mut Criterion) {
     let mut group = c.benchmark_group("logging_timestamp");
 
-    group.bench_function("format_clf_timestamp", |b| {
-        b.iter(format_clf_timestamp)
-    });
+    group.bench_function("format_clf_timestamp", |b| b.iter(format_clf_timestamp));
 
     group.bench_function("days_to_civil", |b| {
         b.iter(|| days_to_civil(black_box(20528)))

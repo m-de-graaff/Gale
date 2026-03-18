@@ -255,7 +255,10 @@ mod tests {
         let big_value = "x".repeat(100_000);
         let req = Request::builder()
             .uri("/")
-            .header("x-huge", HeaderValue::from_bytes(big_value.as_bytes()).unwrap())
+            .header(
+                "x-huge",
+                HeaderValue::from_bytes(big_value.as_bytes()).unwrap(),
+            )
             .body(Body::empty())
             .unwrap();
         assert!(validate_request_limits(&req, &state).is_ok());
@@ -336,7 +339,10 @@ mod tests {
         let req = Request::builder()
             .uri(long_path.parse::<Uri>().unwrap())
             .header("content-length", "999999999999")
-            .header("x-huge", HeaderValue::from_bytes(big_value.as_bytes()).unwrap())
+            .header(
+                "x-huge",
+                HeaderValue::from_bytes(big_value.as_bytes()).unwrap(),
+            )
             .body(Body::empty())
             .unwrap();
         assert!(validate_request_limits(&req, &state).is_ok());

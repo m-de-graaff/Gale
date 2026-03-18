@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use axum::body::Body;
 use axum::extract::State;
 use axum::http::header::HeaderValue;
-use axum::http::{Request, StatusCode, header};
+use axum::http::{header, Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::Response;
 
@@ -21,11 +21,9 @@ pub struct CacheState {
 
 impl CacheState {
     pub fn new(cache_config: &CacheConfig, compression_enabled: bool) -> Self {
-        let default_header = HeaderValue::from_str(&format!(
-            "public, max-age={}",
-            cache_config.default_max_age
-        ))
-        .expect("invalid default_max_age");
+        let default_header =
+            HeaderValue::from_str(&format!("public, max-age={}", cache_config.default_max_age))
+                .expect("invalid default_max_age");
 
         let immutable_header = HeaderValue::from_str(&format!(
             "public, max-age={}, immutable",
@@ -119,10 +117,7 @@ mod tests {
             .into_iter()
             .map(String::from)
             .collect(),
-            no_cache_extensions: vec!["html", "htm"]
-                .into_iter()
-                .map(String::from)
-                .collect(),
+            no_cache_extensions: vec!["html", "htm"].into_iter().map(String::from).collect(),
         }
     }
 

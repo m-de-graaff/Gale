@@ -250,10 +250,8 @@ impl Config {
                 algorithms: vec!["br".into(), "gzip".into()],
                 pre_compressed: true,
                 skip_extensions: vec![
-                    "png", "jpg", "jpeg", "gif", "webp", "avif",
-                    "woff2", "woff",
-                    "mp4", "webm", "ogg",
-                    "zip", "gz", "br", "zst",
+                    "png", "jpg", "jpeg", "gif", "webp", "avif", "woff2", "woff", "mp4", "webm",
+                    "ogg", "zip", "gz", "br", "zst",
                 ]
                 .into_iter()
                 .map(String::from)
@@ -282,18 +280,13 @@ impl Config {
                 default_max_age: 3600,
                 immutable_max_age: 31_536_000,
                 immutable_extensions: vec![
-                    "js", "css", "woff2", "woff", "ttf", "eot",
-                    "png", "jpg", "jpeg", "gif", "svg", "webp", "avif", "ico",
-                    "mp4", "webm", "ogg",
-                    "wasm",
+                    "js", "css", "woff2", "woff", "ttf", "eot", "png", "jpg", "jpeg", "gif", "svg",
+                    "webp", "avif", "ico", "mp4", "webm", "ogg", "wasm",
                 ]
                 .into_iter()
                 .map(String::from)
                 .collect(),
-                no_cache_extensions: vec!["html", "htm"]
-                    .into_iter()
-                    .map(String::from)
-                    .collect(),
+                no_cache_extensions: vec!["html", "htm"].into_iter().map(String::from).collect(),
             },
         }
     }
@@ -638,18 +631,18 @@ impl Config {
             match v.as_str() {
                 "true" | "1" => config.tls.acme_production = true,
                 "false" | "0" => config.tls.acme_production = false,
-                _ => eprintln!(
-                    "Warning: GALE_TLS_ACME_PRODUCTION must be true/false/1/0, ignoring"
-                ),
+                _ => {
+                    eprintln!("Warning: GALE_TLS_ACME_PRODUCTION must be true/false/1/0, ignoring")
+                }
             }
         }
         if let Ok(v) = env::var("GALE_COMPRESSION_ENABLED") {
             match v.as_str() {
                 "true" | "1" => config.compression.enabled = true,
                 "false" | "0" => config.compression.enabled = false,
-                _ => eprintln!(
-                    "Warning: GALE_COMPRESSION_ENABLED must be true/false/1/0, ignoring"
-                ),
+                _ => {
+                    eprintln!("Warning: GALE_COMPRESSION_ENABLED must be true/false/1/0, ignoring")
+                }
             }
         }
         if let Ok(v) = env::var("GALE_COMPRESSION_MIN_SIZE") {
@@ -660,8 +653,7 @@ impl Config {
             }
         }
         if let Ok(v) = env::var("GALE_COMPRESSION_ALGORITHMS") {
-            config.compression.algorithms =
-                v.split(',').map(|s| s.trim().to_string()).collect();
+            config.compression.algorithms = v.split(',').map(|s| s.trim().to_string()).collect();
         }
         if let Ok(v) = env::var("GALE_COMPRESSION_PRE_COMPRESSED") {
             match v.as_str() {
@@ -695,8 +687,7 @@ impl Config {
                 v.split(',').map(|s| s.trim().to_string()).collect();
         }
         if let Ok(v) = env::var("GALE_CACHE_NO_CACHE_EXTENSIONS") {
-            config.cache.no_cache_extensions =
-                v.split(',').map(|s| s.trim().to_string()).collect();
+            config.cache.no_cache_extensions = v.split(',').map(|s| s.trim().to_string()).collect();
         }
         if let Ok(v) = env::var("GALE_LOG_LEVEL") {
             config.logging.level = v;
@@ -714,9 +705,7 @@ impl Config {
             match v.as_str() {
                 "true" | "1" => config.rate_limit.enabled = true,
                 "false" | "0" => config.rate_limit.enabled = false,
-                _ => eprintln!(
-                    "Warning: GALE_RATE_LIMIT_ENABLED must be true/false/1/0, ignoring"
-                ),
+                _ => eprintln!("Warning: GALE_RATE_LIMIT_ENABLED must be true/false/1/0, ignoring"),
             }
         }
         if let Ok(v) = env::var("GALE_RATE_LIMIT_REQUESTS_PER_SECOND") {
@@ -753,16 +742,13 @@ impl Config {
             }
         }
         if let Ok(v) = env::var("GALE_CORS_ALLOWED_ORIGINS") {
-            config.cors.allowed_origins =
-                v.split(',').map(|s| s.trim().to_string()).collect();
+            config.cors.allowed_origins = v.split(',').map(|s| s.trim().to_string()).collect();
         }
         if let Ok(v) = env::var("GALE_CORS_ALLOWED_METHODS") {
-            config.cors.allowed_methods =
-                v.split(',').map(|s| s.trim().to_string()).collect();
+            config.cors.allowed_methods = v.split(',').map(|s| s.trim().to_string()).collect();
         }
         if let Ok(v) = env::var("GALE_CORS_ALLOWED_HEADERS") {
-            config.cors.allowed_headers =
-                v.split(',').map(|s| s.trim().to_string()).collect();
+            config.cors.allowed_headers = v.split(',').map(|s| s.trim().to_string()).collect();
         }
         if let Ok(v) = env::var("GALE_CORS_MAX_AGE") {
             if let Ok(n) = v.parse::<u64>() {
@@ -936,10 +922,22 @@ mod tests {
         assert_eq!(config.compression.min_size, 1024);
         assert_eq!(config.compression.algorithms, vec!["br", "gzip"]);
         assert!(config.compression.pre_compressed);
-        assert!(config.compression.skip_extensions.contains(&"png".to_string()));
-        assert!(config.compression.skip_extensions.contains(&"woff2".to_string()));
-        assert!(config.compression.skip_extensions.contains(&"mp4".to_string()));
-        assert!(config.compression.skip_extensions.contains(&"zip".to_string()));
+        assert!(config
+            .compression
+            .skip_extensions
+            .contains(&"png".to_string()));
+        assert!(config
+            .compression
+            .skip_extensions
+            .contains(&"woff2".to_string()));
+        assert!(config
+            .compression
+            .skip_extensions
+            .contains(&"mp4".to_string()));
+        assert!(config
+            .compression
+            .skip_extensions
+            .contains(&"zip".to_string()));
     }
 
     #[test]
@@ -986,12 +984,30 @@ mod tests {
         let config = Config::load();
         assert_eq!(config.cache.default_max_age, 3600);
         assert_eq!(config.cache.immutable_max_age, 31_536_000);
-        assert!(config.cache.immutable_extensions.contains(&"js".to_string()));
-        assert!(config.cache.immutable_extensions.contains(&"css".to_string()));
-        assert!(config.cache.immutable_extensions.contains(&"woff2".to_string()));
-        assert!(config.cache.immutable_extensions.contains(&"wasm".to_string()));
-        assert!(config.cache.no_cache_extensions.contains(&"html".to_string()));
-        assert!(config.cache.no_cache_extensions.contains(&"htm".to_string()));
+        assert!(config
+            .cache
+            .immutable_extensions
+            .contains(&"js".to_string()));
+        assert!(config
+            .cache
+            .immutable_extensions
+            .contains(&"css".to_string()));
+        assert!(config
+            .cache
+            .immutable_extensions
+            .contains(&"woff2".to_string()));
+        assert!(config
+            .cache
+            .immutable_extensions
+            .contains(&"wasm".to_string()));
+        assert!(config
+            .cache
+            .no_cache_extensions
+            .contains(&"html".to_string()));
+        assert!(config
+            .cache
+            .no_cache_extensions
+            .contains(&"htm".to_string()));
     }
 
     #[test]
@@ -1133,10 +1149,7 @@ mod tests {
         let config = Config::load();
         assert!(!config.cors.enabled);
         assert!(config.cors.allowed_origins.is_empty());
-        assert_eq!(
-            config.cors.allowed_methods,
-            vec!["GET", "HEAD", "OPTIONS"]
-        );
+        assert_eq!(config.cors.allowed_methods, vec!["GET", "HEAD", "OPTIONS"]);
         assert!(config.cors.allowed_headers.is_empty());
         assert_eq!(config.cors.max_age, 86400);
     }
@@ -1157,10 +1170,7 @@ mod tests {
     fn env_cors_allowed_origins_comma_parsing() {
         let _lock = ENV_LOCK.lock().unwrap();
         clear_cors_env_vars();
-        env::set_var(
-            "GALE_CORS_ALLOWED_ORIGINS",
-            "https://a.com, https://b.com",
-        );
+        env::set_var("GALE_CORS_ALLOWED_ORIGINS", "https://a.com, https://b.com");
 
         let config = Config::load();
         assert_eq!(

@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
-use axum::http::{Response, header};
-use tower_http::compression::CompressionLayer;
+use axum::http::{header, Response};
 use tower_http::compression::predicate::Predicate;
+use tower_http::compression::CompressionLayer;
 
 use crate::config::CompressionConfig;
 use crate::mime_types;
@@ -125,7 +125,7 @@ pub fn build_layer(config: &CompressionConfig) -> CompressionLayer<ShouldCompres
 
 #[cfg(test)]
 mod tests {
-    use axum::http::{Response, StatusCode, header};
+    use axum::http::{header, Response, StatusCode};
 
     use super::*;
 
@@ -136,8 +136,8 @@ mod tests {
             algorithms: vec!["br".into(), "gzip".into()],
             pre_compressed: true,
             skip_extensions: vec![
-                "png", "jpg", "jpeg", "gif", "webp", "avif", "woff2", "woff", "mp4", "webm",
-                "ogg", "zip", "gz", "br", "zst",
+                "png", "jpg", "jpeg", "gif", "webp", "avif", "woff2", "woff", "mp4", "webm", "ogg",
+                "zip", "gz", "br", "zst",
             ]
             .into_iter()
             .map(String::from)

@@ -39,9 +39,9 @@ use tower::ServiceExt;
 use gale_lib::cache::{self, CacheState};
 use gale_lib::compression;
 use gale_lib::config::Config;
-use gale_lib::security::headers::{SecurityHeadersState, security_headers_middleware};
-use gale_lib::security::limits::{RequestLimitsState, request_limits_middleware};
-use gale_lib::security::path::{PathSecurityState, path_security_middleware};
+use gale_lib::security::headers::{security_headers_middleware, SecurityHeadersState};
+use gale_lib::security::limits::{request_limits_middleware, RequestLimitsState};
+use gale_lib::security::path::{path_security_middleware, PathSecurityState};
 use gale_lib::static_files;
 
 // ---------------------------------------------------------------------------
@@ -87,12 +87,7 @@ fn build_test_app() -> Router {
 
 async fn get(app: &Router, uri: &str) -> Response<Body> {
     app.clone()
-        .oneshot(
-            Request::builder()
-                .uri(uri)
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
         .await
         .unwrap()
 }
@@ -258,7 +253,10 @@ async fn oversized_header_rejected() {
         .oneshot(
             Request::builder()
                 .uri("/")
-                .header("x-attack", HeaderValue::from_bytes(big_value.as_bytes()).unwrap())
+                .header(
+                    "x-attack",
+                    HeaderValue::from_bytes(big_value.as_bytes()).unwrap(),
+                )
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -413,11 +411,7 @@ mod windows {
     #[tokio::test]
     async fn ads_blocked() {
         let app = build_test_app();
-        let vectors = vec![
-            "/file.txt:hidden",
-            "/file.txt:$DATA",
-            "/index.html:secret",
-        ];
+        let vectors = vec!["/file.txt:hidden", "/file.txt:$DATA", "/index.html:secret"];
         for uri in vectors {
             let resp = get(&app, uri).await;
             assert_eq!(
@@ -432,15 +426,37 @@ mod windows {
     async fn reserved_device_names_blocked() {
         let app = build_test_app();
         let devices = vec![
-            "/CON", "/PRN", "/NUL", "/AUX",
-            "/COM1", "/COM2", "/COM3", "/COM4", "/COM5",
-            "/COM6", "/COM7", "/COM8", "/COM9",
-            "/LPT1", "/LPT2", "/LPT3", "/LPT4", "/LPT5",
-            "/LPT6", "/LPT7", "/LPT8", "/LPT9",
+            "/CON",
+            "/PRN",
+            "/NUL",
+            "/AUX",
+            "/COM1",
+            "/COM2",
+            "/COM3",
+            "/COM4",
+            "/COM5",
+            "/COM6",
+            "/COM7",
+            "/COM8",
+            "/COM9",
+            "/LPT1",
+            "/LPT2",
+            "/LPT3",
+            "/LPT4",
+            "/LPT5",
+            "/LPT6",
+            "/LPT7",
+            "/LPT8",
+            "/LPT9",
             // With extensions
-            "/CON.txt", "/NUL.html", "/COM1.log",
+            "/CON.txt",
+            "/NUL.html",
+            "/COM1.log",
             // Lowercase
-            "/con", "/nul", "/aux", "/prn",
+            "/con",
+            "/nul",
+            "/aux",
+            "/prn",
         ];
         let mut failures = Vec::new();
         for uri in devices {
@@ -462,11 +478,7 @@ mod windows {
     async fn unc_paths_blocked() {
         let app = build_test_app();
         let resp = get(&app, "//server/share").await;
-        assert_eq!(
-            resp.status(),
-            StatusCode::FORBIDDEN,
-            "UNC path not blocked"
-        );
+        assert_eq!(resp.status(), StatusCode::FORBIDDEN, "UNC path not blocked");
     }
 
     #[tokio::test]

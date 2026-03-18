@@ -1,5 +1,5 @@
 use std::convert::Infallible;
-use std::future::{Ready, ready};
+use std::future::{ready, Ready};
 use std::path::Path;
 use std::task::{Context, Poll};
 
@@ -175,9 +175,7 @@ mod tests {
             "text/html; charset=utf-8"
         );
         assert_eq!(
-            resp.headers()
-                .get("x-content-type-options")
-                .unwrap(),
+            resp.headers().get("x-content-type-options").unwrap(),
             "nosniff"
         );
     }
@@ -201,9 +199,7 @@ mod tests {
     #[test]
     fn not_found_service_returns_404_status() {
         let mut svc = NotFoundService::from_config("");
-        let req = Request::builder()
-            .body(Body::empty())
-            .unwrap();
+        let req = Request::builder().body(Body::empty()).unwrap();
         let resp = svc.call(req).into_inner().unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
     }

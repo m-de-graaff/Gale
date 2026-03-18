@@ -6,13 +6,11 @@ use axum::Router;
 use tokio::net::TcpListener;
 
 use crate::config::Config;
-use crate::security::headers::{SecurityHeadersState, security_headers_middleware};
-use crate::security::limits::{RequestLimitsState, request_limits_middleware};
-use crate::security::path::{PathSecurityState, path_security_middleware};
+use crate::security::headers::{security_headers_middleware, SecurityHeadersState};
+use crate::security::limits::{request_limits_middleware, RequestLimitsState};
+use crate::security::path::{path_security_middleware, PathSecurityState};
 
-fn build_cors_layer(
-    config: &crate::config::CorsConfig,
-) -> Option<tower_http::cors::CorsLayer> {
+fn build_cors_layer(config: &crate::config::CorsConfig) -> Option<tower_http::cors::CorsLayer> {
     if !config.enabled {
         return None;
     }
@@ -120,11 +118,9 @@ pub async fn run(config: Config) {
             axum::routing::get(crate::static_files::health_handler),
         );
     }
-    let app = app
-        .merge(static_app)
-        .layer(middleware::from_fn(
-            crate::logging::request_logging_middleware,
-        ));
+    let app = app.merge(static_app).layer(middleware::from_fn(
+        crate::logging::request_logging_middleware,
+    ));
 
     let addr: SocketAddr = format!("{}:{}", config.bind, config.port)
         .parse()
@@ -213,11 +209,9 @@ pub async fn run_with_app(config: Config, extra_routes: Router) {
             axum::routing::get(crate::static_files::health_handler),
         );
     }
-    let app = app
-        .merge(inner_app)
-        .layer(middleware::from_fn(
-            crate::logging::request_logging_middleware,
-        ));
+    let app = app.merge(inner_app).layer(middleware::from_fn(
+        crate::logging::request_logging_middleware,
+    ));
 
     let addr: SocketAddr = format!("{}:{}", config.bind, config.port)
         .parse()
@@ -248,7 +242,10 @@ async fn run_plain(app: Router, addr: SocketAddr, shutdown_timeout: Duration) {
         let timeout = shutdown_timeout;
         tokio::spawn(async move {
             tokio::time::sleep(timeout).await;
-            tracing::warn!(timeout_secs = timeout.as_secs(), "drain timeout expired, forcing shutdown");
+            tracing::warn!(
+                timeout_secs = timeout.as_secs(),
+                "drain timeout expired, forcing shutdown"
+            );
             std::process::exit(0);
         });
     })
@@ -260,13 +257,11 @@ async fn run_tls(app: Router, addr: SocketAddr, config: &Config) {
     crate::tls::validate_tls_config(&config.tls);
 
     let (rustls_config, background_tasks) = if config.tls.acme {
-        let (cfg, renewal_task) =
-            crate::tls::build_acme_rustls_config(&config.tls).await;
+        let (cfg, renewal_task) = crate::tls::build_acme_rustls_config(&config.tls).await;
         (cfg, vec![renewal_task])
     } else {
         let cfg = crate::tls::build_rustls_config(&config.tls).await;
-        let reload_task =
-            crate::tls::spawn_cert_reload_task(&config.tls, cfg.clone());
+        let reload_task = crate::tls::spawn_cert_reload_task(&config.tls, cfg.clone());
         (cfg, vec![reload_task])
     };
 
@@ -282,10 +277,9 @@ async fn run_tls(app: Router, addr: SocketAddr, config: &Config) {
 
     // Spawn HTTP→HTTPS redirect server if redirect_port > 0
     let redirect_task = if config.tls.redirect_port > 0 {
-        let redirect_addr: SocketAddr =
-            format!("{}:{}", config.bind, config.tls.redirect_port)
-                .parse()
-                .expect("invalid bind address or redirect port");
+        let redirect_addr: SocketAddr = format!("{}:{}", config.bind, config.tls.redirect_port)
+            .parse()
+            .expect("invalid bind address or redirect port");
 
         let redirect_app = crate::tls::redirect_router(config.port);
 

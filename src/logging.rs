@@ -19,19 +19,15 @@ use tracing_subscriber::EnvFilter;
 use crate::config::LoggingConfig;
 
 pub fn init(config: &LoggingConfig) {
-    let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new(&config.level));
+    let filter =
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(&config.level));
 
     match (config.format.as_str(), config.output.as_str()) {
         ("json", "file") => {
             let file = open_log_file(&config.file_path);
             tracing_subscriber::registry()
                 .with(filter)
-                .with(
-                    tracing_subscriber::fmt::layer()
-                        .json()
-                        .with_writer(file),
-                )
+                .with(tracing_subscriber::fmt::layer().json().with_writer(file))
                 .init();
         }
         ("json", _) => {
@@ -182,8 +178,7 @@ pub fn format_clf_timestamp() -> String {
     let (year, month, day) = days_to_civil(days);
 
     const MONTHS: [&str; 12] = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ];
 
     format!(
