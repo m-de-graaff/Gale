@@ -1,0 +1,36 @@
+// E-commerce storefront — product listing page.
+//
+// Demonstrates: multi-page app, layout with nav, SSR, shared types.
+
+shared {
+  enum Category { Electronics, Clothing, Books, Home }
+}
+
+out ui StorePage {
+  head {
+    title: "Shop"
+    description: "Browse our products"
+  }
+
+  <h1>"Shop"</h1>
+  <p>"Welcome to the GaleX demo store."</p>
+
+  <section>
+    <h2>"Featured Products"</h2>
+    <div>
+      <article>
+        <h3>"GaleX T-Shirt"</h3>
+        <p>"Show your love for type-safe web development."</p>
+        <span>"$29.99"</span>
+        <a href="/product">"View Details"</a>
+      </article>
+
+      <article>
+        <h3>"Rust Programming Book"</h3>
+        <p>"The definitive guide to Rust programming."</p>
+        <span>"$39.99"</span>
+        <a href="/product">"View Details"</a>
+      </article>
+    </div>
+  </section>
+}

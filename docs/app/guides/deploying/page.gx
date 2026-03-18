@@ -1,0 +1,55 @@
+// Guide: Deploying to Production
+
+out ui DeployingGuide {
+  head {
+    title: "Deploying to Production - GaleX Docs"
+    description: "Deploy GaleX applications to production"
+  }
+
+  <article>
+    <h1>"Guide: Deploying to Production"</h1>
+
+    <section>
+      <h2>"Build for Production"</h2>
+      <pre><code>"gale build --release"</code></pre>
+      <p>"This runs the full optimization pipeline:"</p>
+      <ol>
+        <li>"Parse and type-check all .gx files"</li>
+        <li>"Generate optimized Rust code"</li>
+        <li>"Build Tailwind CSS with class purging"</li>
+        <li>"Minify JavaScript with identifier mangling"</li>
+        <li>"Hash assets for cache busting"</li>
+        <li>"Compile with cargo --release (LTO, strip, opt-level=3)"</li>
+        <li>"Assemble dist/ directory"</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>"Output Structure"</h2>
+      <pre><code>"dist/\n  my-app           # Single binary (&lt; 10MB)\n  public/\n    _gale/\n      runtime.a1b2.js  # Content-hashed JS\n      styles.c3d4.css  # Content-hashed CSS\n    favicon.ico        # User assets"</code></pre>
+    </section>
+
+    <section>
+      <h2>"Running"</h2>
+      <pre><code>"gale serve\n# or directly:\n./dist/my-app --root ./dist/public --port 8080"</code></pre>
+      <p>"Configuration is read from gale.toml and environment variables at runtime. No rebuild needed for config changes."</p>
+    </section>
+
+    <section>
+      <h2>"Docker"</h2>
+      <pre><code>"gale build --release --docker\ndocker build -t my-app dist/\ndocker run -p 8080:8080 my-app"</code></pre>
+      <p>"The generated Dockerfile uses FROM scratch for a minimal image. The final image contains only the binary and static assets."</p>
+    </section>
+
+    <section>
+      <h2>"Health Check"</h2>
+      <p>"The server exposes /health for orchestrator health checks (Kubernetes, ECS, etc.)."</p>
+    </section>
+
+    <section>
+      <h2>"Environment Variables"</h2>
+      <p>"Override configuration at runtime:"</p>
+      <pre><code>"GALE_PORT=8080\nGALE_ROOT=./public\nDATABASE_URL=postgres://..."</code></pre>
+    </section>
+  </article>
+}

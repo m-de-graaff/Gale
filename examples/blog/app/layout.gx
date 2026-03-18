@@ -5,6 +5,10 @@ out layout Root {
       <meta name="viewport" content="width=device-width, initial-scale=1" />
     </head>
     <body>
+      <nav>
+        <a href="/">"Blog"</a>
+        <a href="/posts/hello-world">"First Post"</a>
+      </nav>
       slot
     </body>
   </html>

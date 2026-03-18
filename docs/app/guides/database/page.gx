@@ -1,0 +1,42 @@
+// Guide: Database Integration
+
+out ui DatabaseGuide {
+  head {
+    title: "Database Integration - GaleX Docs"
+    description: "How to connect to databases in GaleX"
+  }
+
+  <article>
+    <h1>"Guide: Database Integration"</h1>
+
+    <section>
+      <h2>"Overview"</h2>
+      <p>"GaleX supports PostgreSQL and SQLite through the database adapter configuration. Database access is available in server-side code: actions, middleware, and API handlers."</p>
+    </section>
+
+    <section>
+      <h2>"Configuration"</h2>
+      <pre><code>"# galex.toml\n[database]\nadapter = \"postgres\"  # or \"sqlite\""</code></pre>
+      <p>"Set the connection string via environment variable:"</p>
+      <pre><code>"DATABASE_URL=postgres://user:pass@localhost/mydb"</code></pre>
+    </section>
+
+    <section>
+      <h2>"Using in Actions"</h2>
+      <p>"Database queries run in action bodies:"</p>
+      <pre><code>"action getUsers() {\n  let users = db.query(\"SELECT * FROM users\")\n  return users\n}"</code></pre>
+    </section>
+
+    <section>
+      <h2>"Using in API Routes"</h2>
+      <p>"API resources have full database access:"</p>
+      <pre><code>"out api Users {\n  get() {\n    return db.query(\"SELECT * FROM users\")\n  }\n  post(name: string, email: string) {\n    db.insert(\"users\", { name, email })\n  }\n}"</code></pre>
+    </section>
+
+    <section>
+      <h2>"Environment Variables"</h2>
+      <p>"Use the env declaration for typed environment access:"</p>
+      <pre><code>"env {\n  DATABASE_URL: string\n  DB_POOL_SIZE: int = 10\n}"</code></pre>
+    </section>
+  </article>
+}

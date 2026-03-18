@@ -1,0 +1,18 @@
+// Shopping cart page.
+//
+// Demonstrates: reactive state, actions for cart operations.
+
+action removeFromCart(productId: int) {
+}
+
+out ui CartPage {
+  head {
+    title: "Shopping Cart"
+  }
+
+  signal cartItems = []
+
+  <h1>"Shopping Cart"</h1>
+  <p>"Your cart is empty."</p>
+  <a href="/">"Continue Shopping"</a>
+}

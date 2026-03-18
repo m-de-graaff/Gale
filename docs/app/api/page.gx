@@ -1,0 +1,88 @@
+// API Reference — guards, queries, channels, stores, actions.
+
+out ui ApiReference {
+  head {
+    title: "API Reference - GaleX Docs"
+    description: "GaleX API reference for guards, queries, channels, and stores"
+  }
+
+  <article>
+    <h1>"API Reference"</h1>
+
+    <section>
+      <h2>"Guard Validators"</h2>
+      <p>"Guards validate form input with typed fields and validators."</p>
+      <table>
+        <thead><tr><th>"Validator"</th><th>"Type"</th><th>"Description"</th></tr></thead>
+        <tbody>
+          <tr><td>"@min(n)"</td><td>"string, int"</td><td>"Minimum length or value"</td></tr>
+          <tr><td>"@max(n)"</td><td>"string, int"</td><td>"Maximum length or value"</td></tr>
+          <tr><td>"@email"</td><td>"string"</td><td>"Must be a valid email"</td></tr>
+          <tr><td>"@url"</td><td>"string"</td><td>"Must be a valid URL"</td></tr>
+          <tr><td>"@regex(pattern)"</td><td>"string"</td><td>"Must match the regex"</td></tr>
+          <tr><td>"@uuid"</td><td>"string"</td><td>"Must be a valid UUID"</td></tr>
+          <tr><td>"@trim"</td><td>"string"</td><td>"Trim whitespace before validation"</td></tr>
+          <tr><td>"@default(value)"</td><td>"any"</td><td>"Default value if missing"</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>"Action API"</h2>
+      <p>"Actions are server-side mutations invoked from the client."</p>
+      <pre><code>"action createPost(title: string, body: string) {\n  // Server-side code\n  // Has access to DB, env, request context\n  return { id: 1 }\n}"</code></pre>
+      <p>"Client-side, actions are called as async functions. Errors throw GaleValidationError (guard failure), GaleServerError (server error), or GaleNetworkError (connection failure)."</p>
+    </section>
+
+    <section>
+      <h2>"Query API"</h2>
+      <p>"Queries fetch data reactively with caching and retries."</p>
+      <pre><code>"// Client-side usage:\nlet users = query(\"/api/users\", {\n  retries: 3,\n  staleTime: 60000\n})"</code></pre>
+      <p>"Returns an object with .data, .loading, .error, .stale, .refetch(), and .mutate() properties."</p>
+    </section>
+
+    <section>
+      <h2>"Channel API"</h2>
+      <p>"Channels provide WebSocket communication."</p>
+      <pre><code>"// Client-side usage:\nlet chat = channel(\"Chat\")\n// chat.messages    - signal with all received messages\n// chat.connected   - signal (true/false)\n// chat.send(data)  - send to server\n// chat.close()     - disconnect\n// chat.reconnect() - manual reconnect"</code></pre>
+      <p>"Channels auto-reconnect with exponential backoff (up to 30s)."</p>
+    </section>
+
+    <section>
+      <h2>"Client Runtime"</h2>
+      <p>"The client runtime (sub-3KB gzipped) exposes these functions:"</p>
+      <table>
+        <thead><tr><th>"Function"</th><th>"Description"</th></tr></thead>
+        <tbody>
+          <tr><td>"signal(init)"</td><td>"Create a reactive value"</td></tr>
+          <tr><td>"derive(fn)"</td><td>"Create a computed value"</td></tr>
+          <tr><td>"effect(fn)"</td><td>"Run side effects on dependency change"</td></tr>
+          <tr><td>"watch(deps, fn)"</td><td>"Explicit dependency watching"</td></tr>
+          <tr><td>"batch(fn)"</td><td>"Group updates into single re-render"</td></tr>
+          <tr><td>"navigate(url)"</td><td>"Client-side navigation"</td></tr>
+          <tr><td>"action(name, params)"</td><td>"Call a server action"</td></tr>
+          <tr><td>"query(url, opts)"</td><td>"Reactive data fetching"</td></tr>
+          <tr><td>"channel(name, opts)"</td><td>"WebSocket connection"</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>"CLI Reference"</h2>
+      <table>
+        <thead><tr><th>"Command"</th><th>"Description"</th></tr></thead>
+        <tbody>
+          <tr><td>"gale new [name]"</td><td>"Create a new project (interactive)"</td></tr>
+          <tr><td>"gale dev"</td><td>"Development server with hot reload"</td></tr>
+          <tr><td>"gale build [--release]"</td><td>"Compile to Rust binary"</td></tr>
+          <tr><td>"gale serve"</td><td>"Run production build from dist/"</td></tr>
+          <tr><td>"gale check"</td><td>"Type-check without building"</td></tr>
+          <tr><td>"gale fmt [--check]"</td><td>"Format .gx files"</td></tr>
+          <tr><td>"gale lint"</td><td>"Run static analysis"</td></tr>
+          <tr><td>"gale test [--filter]"</td><td>"Run test blocks"</td></tr>
+          <tr><td>"gale build --docker"</td><td>"Generate Dockerfile with build"</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </article>
+}

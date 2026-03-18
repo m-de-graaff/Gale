@@ -5,7 +5,15 @@ out layout Root {
       <meta name="viewport" content="width=device-width, initial-scale=1" />
     </head>
     <body>
-      slot
+      <header>
+        <nav>
+          <a href="/">"Shop"</a>
+          <a href="/cart">"Cart"</a>
+        </nav>
+      </header>
+      <main>
+        slot
+      </main>
     </body>
   </html>
 }

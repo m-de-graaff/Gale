@@ -1,0 +1,43 @@
+// Guide: Authentication and Route Guards
+
+out ui AuthGuide {
+  head {
+    title: "Authentication - GaleX Docs"
+    description: "How to add authentication and protect routes in GaleX"
+  }
+
+  <article>
+    <h1>"Guide: Authentication and Route Guards"</h1>
+
+    <section>
+      <h2>"Overview"</h2>
+      <p>"GaleX supports authentication through middleware and route guards. Middleware intercepts requests before they reach your pages, and guards validate data on form submission."</p>
+    </section>
+
+    <section>
+      <h2>"Session-Based Auth"</h2>
+      <p>"Configure session auth in galex.toml:"</p>
+      <pre><code>"[auth]\nstrategy = \"session\""</code></pre>
+      <p>"This enables cookie-based sessions. The middleware checks for a valid session cookie on each request."</p>
+    </section>
+
+    <section>
+      <h2>"JWT Auth"</h2>
+      <p>"For token-based auth:"</p>
+      <pre><code>"[auth]\nstrategy = \"jwt\""</code></pre>
+      <p>"JWT tokens are validated on each request. The token payload is available in your server code."</p>
+    </section>
+
+    <section>
+      <h2>"Protecting Routes"</h2>
+      <p>"Use middleware.gx in a route directory to protect all pages in that directory:"</p>
+      <pre><code>"// app/admin/middleware.gx\nmiddleware AuthCheck for /admin {\n  // Check authentication\n  // Redirect to /login if not authenticated\n}"</code></pre>
+    </section>
+
+    <section>
+      <h2>"Login Form"</h2>
+      <p>"Create a login page with a guard and action:"</p>
+      <pre><code>"guard LoginForm {\n  email: string\n  password: string\n}\n\naction login(form: LoginForm) {\n  // Verify credentials, create session\n}"</code></pre>
+    </section>
+  </article>
+}

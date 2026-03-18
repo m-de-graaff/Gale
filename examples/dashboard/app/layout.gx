@@ -1,0 +1,22 @@
+out layout Root {
+  <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+    </head>
+    <body>
+      <div>
+        <aside>
+          <nav>
+            <a href="/">"Overview"</a>
+            <a href="/users">"Users"</a>
+            <a href="/settings">"Settings"</a>
+          </nav>
+        </aside>
+        <main>
+          slot
+        </main>
+      </div>
+    </body>
+  </html>
+}

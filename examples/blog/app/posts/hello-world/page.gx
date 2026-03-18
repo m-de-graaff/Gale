@@ -1,0 +1,26 @@
+// Blog post page — a single blog post.
+//
+// Demonstrates: nested routes, head metadata, SSR content rendering.
+
+out ui HelloWorld {
+  head {
+    title: "Hello, World! - My Blog"
+    description: "An introduction to building websites with GaleX"
+  }
+
+  <article>
+    <header>
+      <h1>"Hello, World!"</h1>
+      <time>"March 18, 2026"</time>
+    </header>
+
+    <section>
+      <p>"This is the first post on a blog built entirely with GaleX."</p>
+      <p>"GaleX compiles .gx files into a native Rust binary with SSR and fine-grained reactivity."</p>
+    </section>
+
+    <footer>
+      <a href="/">"Back to all posts"</a>
+    </footer>
+  </article>
+}

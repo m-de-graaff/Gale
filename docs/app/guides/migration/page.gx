@@ -1,0 +1,66 @@
+// Guide: Migrating from Next.js
+
+out ui MigrationGuide {
+  head {
+    title: "Migrating from Next.js - GaleX Docs"
+    description: "Guide for migrating Next.js applications to GaleX"
+  }
+
+  <article>
+    <h1>"Guide: Migrating from Next.js"</h1>
+
+    <section>
+      <h2>"Concept Mapping"</h2>
+      <table>
+        <thead><tr><th>"Next.js"</th><th>"GaleX"</th></tr></thead>
+        <tbody>
+          <tr><td>"pages/index.tsx"</td><td>"app/page.gx"</td></tr>
+          <tr><td>"pages/[slug].tsx"</td><td>"app/[slug]/page.gx"</td></tr>
+          <tr><td>"_app.tsx / layout.tsx"</td><td>"app/layout.gx"</td></tr>
+          <tr><td>"useState / useReducer"</td><td>"signal / derive"</td></tr>
+          <tr><td>"useEffect"</td><td>"effect"</td></tr>
+          <tr><td>"getServerSideProps"</td><td>"server { } block"</td></tr>
+          <tr><td>"API routes"</td><td>"out api Resource { }"</td></tr>
+          <tr><td>"middleware.ts"</td><td>"middleware.gx"</td></tr>
+          <tr><td>"next/head"</td><td>"head { title: ... }"</td></tr>
+          <tr><td>"next/link"</td><td>"&lt;a href=... &gt;"</td></tr>
+          <tr><td>"React.memo"</td><td>"Not needed (fine-grained)"</td></tr>
+          <tr><td>"Virtual DOM diffing"</td><td>"Direct DOM updates"</td></tr>
+          <tr><td>"Node.js runtime"</td><td>"Native Rust binary"</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>"Key Differences"</h2>
+      <ul>
+        <li>"No JavaScript build toolchain (no webpack, no babel, no esbuild)"</li>
+        <li>"No node_modules (dependencies are Rust crates)"</li>
+        <li>"No virtual DOM (signals update the DOM directly)"</li>
+        <li>"Single binary output (not a Node.js app with node_modules)"</li>
+        <li>"Sub-3KB client runtime (vs 80KB+ for React)"</li>
+        <li>"Type-safe server/client boundary (guards, actions)"</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>"Step-by-Step Migration"</h2>
+      <ol>
+        <li>"Create a new GaleX project: gale new my-app"</li>
+        <li>"Convert pages: .tsx -> .gx (map JSX to GaleX templates)"</li>
+        <li>"Convert state: useState -> signal, useMemo -> derive"</li>
+        <li>"Convert API routes: pages/api/* -> out api declarations"</li>
+        <li>"Convert forms: add guard declarations for validation"</li>
+        <li>"Convert middleware: middleware.ts -> middleware.gx"</li>
+        <li>"Move static assets: public/ -> public/"</li>
+        <li>"Update config: next.config.js -> galex.toml"</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>"Template Syntax"</h2>
+      <p>"GaleX templates are similar to JSX but with some differences:"</p>
+      <pre><code>"// Next.js (JSX)\n&lt;div className={active ? 'active' : ''}&gt;\n  {items.map(item =&gt; &lt;li key={item.id}&gt;{item.name}&lt;/li&gt;)}\n&lt;/div&gt;\n\n// GaleX\n&lt;div class:active={isActive.get()}&gt;\n  each item in items.get() {\n    &lt;li&gt;{item.name}&lt;/li&gt;\n  }\n&lt;/div&gt;"</code></pre>
+    </section>
+  </article>
+}

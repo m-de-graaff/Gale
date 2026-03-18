@@ -1,0 +1,35 @@
+// Settings page.
+//
+// Demonstrates: form-like layout with sections.
+
+out ui SettingsPage {
+  head {
+    title: "Settings - Dashboard"
+  }
+
+  <h1>"Settings"</h1>
+
+  <section>
+    <h2>"General"</h2>
+    <div>
+      <label>"Application Name"</label>
+      <input type="text" value="My App" />
+    </div>
+    <div>
+      <label>"Timezone"</label>
+      <select>
+        <option value="utc">"UTC"</option>
+        <option value="est">"Eastern"</option>
+        <option value="pst">"Pacific"</option>
+      </select>
+    </div>
+  </section>
+
+  <section>
+    <h2>"Notifications"</h2>
+    <div>
+      <label>"Email notifications"</label>
+      <input type="checkbox" />
+    </div>
+  </section>
+}
