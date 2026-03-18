@@ -1,0 +1,107 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.suffix }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            suffix: linux-amd64
+            ext: ""
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            suffix: macos-arm64
+            ext: ""
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            suffix: macos-amd64
+            ext: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            suffix: windows-amd64
+            ext: ".exe"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install musl-tools
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Build and stage binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staging
+
+          # 1. Build web server (root package) — produces 'gale' binary
+          cargo build --release --target ${{ matrix.target }} -p gale
+          cp "target/${{ matrix.target }}/release/gale${{ matrix.ext }}" \
+             "staging/gale${{ matrix.ext }}"
+
+          # 2. Build galex (language toolchain) — also produces 'gale' binary,
+          #    which overwrites the one above in target/. We already saved it.
+          #    Rename galex's 'gale' to 'galex' to avoid conflict.
+          cargo build --release --target ${{ matrix.target }} -p galex
+          cp "target/${{ matrix.target }}/release/gale${{ matrix.ext }}" \
+             "staging/galex${{ matrix.ext }}"
+          cp "target/${{ matrix.target }}/release/gale-lsp${{ matrix.ext }}" \
+             "staging/gale-lsp${{ matrix.ext }}"
+
+          # 3. Build gale-registry
+          cargo build --release --target ${{ matrix.target }} -p gale-registry
+          cp "target/${{ matrix.target }}/release/gale-registry${{ matrix.ext }}" \
+             "staging/gale-registry${{ matrix.ext }}"
+
+      - name: Package (tar.gz)
+        if: matrix.os != 'windows-latest'
+        shell: bash
+        run: tar czf "gale-${{ matrix.suffix }}.tar.gz" -C staging .
+
+      - name: Package (zip)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          cd staging
+          7z a "../gale-${{ matrix.suffix }}.zip" .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gale-${{ matrix.suffix }}
+          path: gale-${{ matrix.suffix }}.*
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: artifacts/*

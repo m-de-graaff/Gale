@@ -1,0 +1,24 @@
+{
+  "name": "tree-sitter-gale",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for the GaleX language",
+  "main": "bindings/node",
+  "keywords": ["parser", "tree-sitter", "galex", "gale"],
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "tree-sitter-cli": "^0.24.0"
+  },
+  "scripts": {
+    "build": "tree-sitter generate",
+    "test": "tree-sitter test"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.gale",
+      "file-types": ["gx"],
+      "highlights": "queries/highlights.scm",
+      "injection-regex": "^gale$"
+    }
+  ]
+}

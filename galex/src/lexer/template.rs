@@ -85,9 +85,38 @@ impl<'src> Lexer<'src> {
                 (Token::HtmlSelfClose, span)
             }
 
-            // Other characters — delegate to code-mode operator/delimiter lexing
-            _ => self.lex_operator_or_delimiter(),
+            // Unquoted text content — everything else until we hit a special character.
+            // This allows natural HTML like `<h1>Hello world</h1>` without quotes.
+            _ => self.lex_bare_text(),
         }
+    }
+
+    /// Lex unquoted text content inside a template.
+    ///
+    /// Accumulates all characters until hitting `<`, `{`, `}`, or EOF.
+    /// Produces an `HtmlText` token. Leading/trailing whitespace within
+    /// the text is preserved (template whitespace was already skipped).
+    fn lex_bare_text(&mut self) -> TokenWithSpan {
+        let start = self.cursor.pos();
+        let line = self.cursor.line();
+        let col = self.cursor.col();
+
+        let mut text = String::new();
+        loop {
+            match self.cursor.peek() {
+                // Stop at HTML tags, expressions, block boundaries, or EOF
+                None | Some('<') | Some('{') | Some('}') => break,
+                Some(ch) => {
+                    self.cursor.advance();
+                    text.push(ch);
+                }
+            }
+        }
+
+        // Trim trailing whitespace (leading was already skipped)
+        let trimmed = text.trim_end().to_string();
+        let span = self.span_from(start, line, col);
+        (Token::HtmlText(trimmed), span)
     }
 
     /// Lex an HTML open tag: `<tagname`
@@ -176,7 +205,11 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    /// Lex an identifier in template mode — may be keyword or component name.
+    /// Lex an identifier in template mode.
+    ///
+    /// Only the template-control keywords (`when`, `each`, `suspend`, `slot`)
+    /// are recognised as keywords.  Everything else is treated as bare text
+    /// content so that `<p>Hello world</p>` works without quotes.
     fn lex_template_identifier(&mut self) -> TokenWithSpan {
         let start = self.cursor.pos();
         let line = self.cursor.line();
@@ -186,12 +219,28 @@ impl<'src> Lexer<'src> {
             .cursor
             .eat_while(|ch| UnicodeXID::is_xid_continue(ch) || ch == '_');
         let ident_owned = ident.to_string();
-        let span = self.span_from(start, line, col);
 
-        match lookup_keyword(&ident_owned) {
-            Some(kw_token) => (kw_token, span),
-            None => (Token::Ident(ident_owned), span),
+        // Only recognise template-control keywords in template mode.
+        if matches!(ident_owned.as_str(), "when" | "each" | "suspend" | "slot") {
+            let span = self.span_from(start, line, col);
+            return (lookup_keyword(&ident_owned).unwrap(), span);
         }
+
+        // Not a template keyword — treat as bare text content.
+        // Continue scanning until we hit a tag, expression, or block boundary.
+        let mut text = ident_owned;
+        loop {
+            match self.cursor.peek() {
+                None | Some('<') | Some('{') | Some('}') => break,
+                Some(ch) => {
+                    self.cursor.advance();
+                    text.push(ch);
+                }
+            }
+        }
+        let trimmed = text.trim_end().to_string();
+        let span = self.span_from(start, line, col);
+        (Token::HtmlText(trimmed), span)
     }
 
     /// Lex inside an HTML tag: attributes, directives, `>`, `/>`.

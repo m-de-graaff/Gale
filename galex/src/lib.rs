@@ -22,6 +22,7 @@ pub mod commands;
 pub mod compiler;
 pub mod config;
 pub mod dev;
+pub mod errors;
 pub mod fmt;
 pub mod lint;
 pub mod lsp;
