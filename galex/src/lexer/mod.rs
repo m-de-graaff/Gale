@@ -45,7 +45,7 @@ pub struct Lexer<'src> {
     /// Whether the previous meaningful token can end an expression
     /// (for regex vs division disambiguation).
     prev_can_end_expr: bool,
-    errors: Vec<LexError>,
+    pub errors: Vec<LexError>,
     file_id: u32,
 }
 
@@ -76,6 +76,13 @@ impl<'src> Lexer<'src> {
         if self.mode_stack.len() > 1 {
             self.mode_stack.pop();
         }
+    }
+
+    /// Rewind the lexer to a previous byte offset.
+    ///
+    /// Used by the parser when switching modes requires re-lexing tokens.
+    pub fn rewind_to(&mut self, byte_offset: usize) {
+        self.cursor.rewind_to(byte_offset);
     }
 
     /// Get all errors accumulated during lexing.

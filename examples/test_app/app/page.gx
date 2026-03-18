@@ -1,0 +1,10 @@
+out ui HomePage {
+  head {
+    title: "Test App"
+  }
+
+  <main>
+    <h1>"Hello from GaleX!"</h1>
+    <p>"This is a test application."</p>
+  </main>
+}

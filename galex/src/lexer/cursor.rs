@@ -54,6 +54,28 @@ impl<'src> Cursor<'src> {
         self.remaining.is_empty()
     }
 
+    /// Rewind the cursor to a previous byte offset.
+    ///
+    /// Recomputes line/column by scanning from the start of the source.
+    /// Used by the parser when switching lexer modes requires re-lexing
+    /// already-peeked tokens.
+    pub fn rewind_to(&mut self, byte_offset: usize) {
+        let offset = byte_offset.min(self.source.len());
+        self.remaining = &self.source[offset..];
+        self.pos = offset;
+        // Recompute line/col by counting newlines before the offset
+        self.line = 1;
+        self.col = 1;
+        for ch in self.source[..offset].chars() {
+            if ch == '\n' {
+                self.line += 1;
+                self.col = 1;
+            } else {
+                self.col += 1;
+            }
+        }
+    }
+
     /// Peek at the next character without consuming it.
     pub fn peek(&self) -> Option<char> {
         self.remaining.chars().next()

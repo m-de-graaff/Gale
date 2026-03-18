@@ -1,0 +1,15 @@
+[extension]
+id = "gale"
+name = "GaleX"
+version = "0.1.0"
+description = "GaleX language support for Zed"
+authors = ["Gale Team"]
+repository = "https://github.com/example/gale"
+
+[grammars.gale]
+repository = "https://github.com/example/tree-sitter-gale"
+rev = "main"
+
+[language_servers.gale-lsp]
+language = "gale"
+command = { path = "gale-lsp" }

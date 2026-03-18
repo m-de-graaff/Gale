@@ -1,0 +1,125 @@
+/* GaleX Dev Overlay — error display and reconnecting banner. */
+
+#gale-dev-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.88);
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+  font-size: 14px;
+  color: #e8e8e8;
+  overflow-y: auto;
+}
+
+.gale-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 2rem;
+  background: #1a1a2e;
+  border-bottom: 1px solid #e74c3c;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e74c3c;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.gale-overlay-close {
+  background: none;
+  border: 1px solid #555;
+  color: #aaa;
+  font-size: 22px;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.gale-overlay-close:hover {
+  background: #333;
+  color: #fff;
+}
+
+.gale-overlay-body {
+  padding: 1.5rem 2rem;
+}
+
+.gale-error-card {
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-left: 3px solid #e74c3c;
+  border-radius: 6px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.gale-error-file {
+  color: #3498db;
+  font-size: 12px;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.gale-error-message {
+  color: #f1f1f1;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.gale-error-code {
+  display: inline-block;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.gale-error-source {
+  background: #0d1117;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  border: 1px solid #21262d;
+}
+.gale-error-source code {
+  color: #c9d1d9;
+}
+
+.gale-error-suggestion {
+  color: #2ecc71;
+  font-size: 13px;
+  font-style: italic;
+  margin-top: 0.5rem;
+  padding-left: 0.25rem;
+}
+
+/* ── Reconnecting Banner ────────────────────────────────────────────── */
+
+#gale-dev-reconnecting {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100000;
+  background: #f39c12;
+  color: #1a1a2e;
+  text-align: center;
+  padding: 8px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}

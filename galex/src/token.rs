@@ -88,7 +88,7 @@ pub enum Token {
     /// `empty` — fallback for empty `each` lists
     Empty,
 
-    // ── Keywords — modules & export (4) ────────────────────────────────
+    // ── Keywords — modules & export (5) ────────────────────────────────
     /// `use` — import declaration
     Use,
     /// `out` — export declaration
@@ -97,6 +97,8 @@ pub enum Token {
     Ui,
     /// `api` — API route marker (used with `out`)
     Api,
+    /// `layout` — page layout wrapper (used with `out`)
+    Layout,
 
     // ── Keywords — page features (6) ──────────────────────────────────
     /// `head` — document head metadata
@@ -356,6 +358,7 @@ impl Token {
                 | Token::Out
                 | Token::Ui
                 | Token::Api
+                | Token::Layout
                 | Token::Head
                 | Token::Redirect
                 | Token::Middleware
@@ -405,6 +408,7 @@ impl Token {
             Token::Out => "keyword `out`",
             Token::Ui => "keyword `ui`",
             Token::Api => "keyword `api`",
+            Token::Layout => "keyword `layout`",
             Token::Head => "keyword `head`",
             Token::Redirect => "keyword `redirect`",
             Token::Middleware => "keyword `middleware`",
@@ -536,6 +540,7 @@ pub fn lookup_keyword(ident: &str) -> Option<Token> {
         "out" => Some(Token::Out),
         "ui" => Some(Token::Ui),
         "api" => Some(Token::Api),
+        "layout" => Some(Token::Layout),
         // Page features
         "head" => Some(Token::Head),
         "redirect" => Some(Token::Redirect),
@@ -596,6 +601,7 @@ mod tests {
             ("out", Token::Out),
             ("ui", Token::Ui),
             ("api", Token::Api),
+            ("layout", Token::Layout),
             ("head", Token::Head),
             ("redirect", Token::Redirect),
             ("middleware", Token::Middleware),

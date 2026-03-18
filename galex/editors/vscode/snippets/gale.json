@@ -1,0 +1,76 @@
+{
+  "New Page Component": {
+    "prefix": "gx-page",
+    "body": [
+      "out ui ${1:PageName} {",
+      "  head {",
+      "    title: \"${2:Page Title}\"",
+      "  }",
+      "",
+      "  <main>",
+      "    $0",
+      "  </main>",
+      "}"
+    ],
+    "description": "Create a new page component"
+  },
+  "New Guard": {
+    "prefix": "gx-guard",
+    "body": [
+      "guard ${1:GuardName} {",
+      "  ${2:field}: ${3:string}.${4:nonEmpty}()",
+      "}"
+    ],
+    "description": "Create a new guard declaration"
+  },
+  "New Store": {
+    "prefix": "gx-store",
+    "body": [
+      "store ${1:StoreName} {",
+      "  signal ${2:count} = ${3:0}",
+      "  derive ${4:doubled} = ${2:count} * 2",
+      "",
+      "  fn ${5:increment}() {",
+      "    ${2:count} += 1",
+      "  }",
+      "}"
+    ],
+    "description": "Create a new store with signal, derive, and method"
+  },
+  "New Action": {
+    "prefix": "gx-action",
+    "body": [
+      "action ${1:actionName}(${2:params}) {",
+      "  $0",
+      "}"
+    ],
+    "description": "Create a new action"
+  },
+  "New Query": {
+    "prefix": "gx-query",
+    "body": [
+      "query ${1:QueryName} = \"${2:/api/endpoint}\" -> ${3:ReturnType}"
+    ],
+    "description": "Create a new query declaration"
+  },
+  "When Block": {
+    "prefix": "gx-when",
+    "body": [
+      "when ${1:condition} {",
+      "  $0",
+      "}"
+    ],
+    "description": "Template when/else conditional block"
+  },
+  "Each Loop": {
+    "prefix": "gx-each",
+    "body": [
+      "each ${1:item}, ${2:index} in ${3:items} {",
+      "  <${4:div} key={${1:item}.id}>",
+      "    $0",
+      "  </${4:div}>",
+      "}"
+    ],
+    "description": "Template each loop with key"
+  }
+}

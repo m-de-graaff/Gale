@@ -1,0 +1,52 @@
+// Todo application — demonstrates signals, guards, actions, each/when directives.
+
+guard TodoInput {
+  text: string @min(1) @max(200)
+}
+
+action addTodo(input: TodoInput) {
+  return { id: 1, text: input.text, done: false }
+}
+
+action toggleTodo(id: int) {
+  return { id: id, toggled: true }
+}
+
+action deleteTodo(id: int) {
+  return { id: id, deleted: true }
+}
+
+out ui TodoApp {
+  head {
+    title: "Todo App"
+  }
+
+  signal todos = []
+  signal filter = "all"
+  signal newText = ""
+
+  <h1>"Todos"</h1>
+
+  <div class="add-form">
+    <input type="text" placeholder="What needs to be done?" bind:value={newText} />
+    <button on:click={addTodo}>"Add"</button>
+  </div>
+
+  <div class="filters">
+    <button class:active={filter.get() == "all"} on:click={() => filter.set("all")}>"All"</button>
+    <button class:active={filter.get() == "active"} on:click={() => filter.set("active")}>"Active"</button>
+    <button class:active={filter.get() == "done"} on:click={() => filter.set("done")}>"Done"</button>
+  </div>
+
+  <ul class="todo-list">
+    each todo in todos.get() {
+      <li class="todo-item">
+        <input type="checkbox" />
+        <span>{todo.text}</span>
+        <button>"x"</button>
+      </li>
+    }
+  </ul>
+
+  <p class="count">"0 items remaining"</p>
+}

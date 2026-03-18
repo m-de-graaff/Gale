@@ -1,0 +1,55 @@
+{
+  "name": "gale",
+  "displayName": "GaleX",
+  "description": "GaleX language support — syntax highlighting, diagnostics, autocomplete, and more",
+  "version": "0.1.0",
+  "publisher": "gale",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": ["Programming Languages", "Linters", "Formatters"],
+  "activationEvents": ["onLanguage:gale"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "gale",
+        "aliases": ["GaleX", "gale"],
+        "extensions": [".gx"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "gale",
+        "scopeName": "source.gale",
+        "path": "./syntaxes/gale.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "gale",
+        "path": "./snippets/gale.json"
+      }
+    ],
+    "configuration": {
+      "title": "GaleX",
+      "properties": {
+        "gale.lspPath": {
+          "type": "string",
+          "default": "gale-lsp",
+          "description": "Path to the gale-lsp binary"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.0.0",
+    "vscode-languageclient": "^9.0.0"
+  }
+}

@@ -1,194 +1,260 @@
 <p align="center">
   <br/>
-  <strong>Gale</strong>
+  <strong>GaleX</strong>
   <br/>
-  <em>A brutally fast, minimal, and secure static web server written in Rust.</em>
+  <em>A type-safe, reactive web framework that compiles to Rust.</em>
   <br/><br/>
-  <code>Single binary · Zero runtime dependencies · Sub-5MB · Memory-safe</code>
+  <code>Single binary &middot; SSR by default &middot; Fine-grained reactivity &middot; &lt; 3KB client runtime</code>
 </p>
 
 ---
 
-## What is Gale?
+## What is GaleX?
 
-Gale is a high-performance static web server built from scratch in Rust. It serves HTML, CSS, JavaScript, images, fonts, video, and every other common web asset with near-zero overhead. No garbage collector, no interpreter, no VM — just compiled machine code responding to HTTP requests as fast as the kernel allows.
+GaleX is a full-stack web framework with its own language (`.gx` files) that compiles to a native Rust server binary. You write components with HTML templates, reactive state, typed server actions, and form validation in a single file. The compiler generates an Axum/Tokio server with SSR, hydration, and a sub-3KB client runtime.
 
-The name comes from a gale-force wind: relentless, fast, and impossible to ignore.
+```
+app/page.gx  -->  gale build  -->  single binary (< 10MB)
+```
 
-## Why build another web server?
+No Node.js. No bundler config. No runtime framework. Just a compiled binary that serves your app.
 
-Most existing options fall into two camps:
-
-- **Heavy and configurable** (nginx, Apache) — powerful but massive config surface, written in C/C++ with decades of CVE history, and far more complexity than a static site needs.
-- **Convenient but slow** (Node/Python dev servers, Caddy) — great developer experience but runtime overhead, garbage collection pauses, and larger memory footprints.
-
-Gale sits in the gap: **production-grade performance with zero unnecessary complexity.** It does one thing — serve static files — and does it exceptionally well.
-
-## Goals
-
-| Priority | Goal |
-|----------|------|
-| 🥇 | **Raw speed** — competitive with or faster than nginx for static file serving |
-| 🥈 | **Security by default** — hardened against OWASP Top 10 out of the box |
-| 🥉 | **Minimal footprint** — single static binary < 5MB, runtime RSS < 20MB |
-| 4 | **Zero configuration required** — sensible defaults, optional config file |
-| 5 | **Minimal dependencies** — only what's necessary, auditable Cargo.toml |
-
-## Non-goals
-
-- Dynamic content, CGI, PHP, reverse proxying, load balancing
-- Plugin or module system
-- Compatibility with nginx/Apache config formats
-
-## Platform support
-
-| Platform | Tier | Notes |
-|----------|------|-------|
-| Linux (x86_64, aarch64) | Primary | Static MUSL builds, Docker |
-| macOS (x86_64, Apple Silicon) | Primary | Universal binary via `lipo` |
-| Windows (x86_64) | Primary | MSVC toolchain |
-
-## Tech stack
-
-| Component | Choice | Rationale |
-|-----------|--------|-----------|
-| Language | **Rust** (stable) | Fastest compiled language with memory safety guarantees. No GC. |
-| Async runtime | **Tokio** | Industry-standard async runtime. Powers Discord, Cloudflare, AWS. |
-| HTTP framework | **Axum** | Built by the Tokio team. Minimal, composable, fastest ergonomic option. |
-| Middleware | **tower-http** | Compression, CORS, tracing, static files — all as composable layers. |
-| TLS | **rustls** | Pure-Rust TLS. No OpenSSL dependency. Modern cipher suites only. |
-| Logging | **tracing** | Structured, async-aware logging with zero-cost when disabled. |
-
-**Total core dependencies: 5 crates.** Everything else is from Rust's standard library.
-
-## Feature set
-
-### Serving
-- Static file serving from configurable root directory
-- Automatic MIME type detection (~60 common types)
-- Directory index (index.html fallback)
-- Custom error pages (404, 500, etc.)
-- Range requests (HTTP 206 — video/audio streaming, download resumption)
-- Pre-compressed file support (.gz, .br sidecars served automatically)
-
-### Performance
-- Gzip and Brotli response compression with smart skip (no double-compressing images)
-- ETag and Last-Modified conditional responses (304 Not Modified)
-- Configurable Cache-Control headers per file type
-- HTTP/2 with automatic ALPN negotiation over TLS
-- Tokio multi-threaded runtime (scales to all available cores)
-
-### Security
-- **Path traversal protection** — canonicalized, jailed paths; dotfile blocking
-- **Security headers** — CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy
-- **Request limits** — max body size, URI length, header count/size, timeouts
-- **Rate limiting** — per-IP request throttling and connection caps
-- **TLS 1.2+ only** — strong cipher suites, no legacy protocol support
-- **No information leakage** — generic error pages, no server version header
-- **CORS** — configurable origin allowlist (never `*` with credentials)
-
-### Operational
-- Graceful shutdown (Unix signals + Windows Ctrl+C — Tokio abstracts both)
-- Structured access logging (CLF-compatible)
-- Health check endpoint (/health)
-- ACME / Let's Encrypt auto-renewal (optional)
-- Hot certificate reload without restart
-
-## Threat model
-
-Gale is hardened against the OWASP Top 10:2025 risks that apply to a static file server:
-
-| OWASP 2025 | Risk | Gale mitigation |
-|------------|------|-----------------|
-| A01 | Broken access control | Path jailing, symlink policy, dotfile blocking |
-| A02 | Security misconfiguration | Secure defaults, minimal config surface, no default credentials |
-| A03 | Supply chain failures | Minimal deps, `cargo audit` in CI, lockfile pinning |
-| A04 | Cryptographic failures | rustls with TLS 1.2+ only, strong ciphers, HSTS |
-| A05 | Injection | No dynamic content, no user input processing, no query parsing |
-| A09 | Logging failures | Structured logging on every request, configurable levels |
-| A10 | Mishandled exceptions | Generic error responses, no stack traces in production |
-
-Risks A06 (Insecure design), A07 (Auth failures), A08 (Integrity failures) are not applicable — Gale has no authentication, no user accounts, and no dynamic data processing.
-
-## Build & deploy
+## Quick Start
 
 ```bash
-# Development (all platforms)
-cargo run -- --root ./public --port 8080
+# Install (requires Rust toolchain)
+cargo install galex
 
-# Release build
-cargo build --release
-# Binary at: target/release/gale (Linux/macOS) or target/release/gale.exe (Windows)
+# Create a new project
+gale new my-app
+cd my-app
 
-# Linux — static MUSL build (zero runtime dependencies)
-rustup target add x86_64-unknown-linux-musl
-cargo build --release --target x86_64-unknown-linux-musl
+# Start the dev server (hot reload, error overlay)
+gale dev
 
-# macOS — universal binary (Intel + Apple Silicon)
-rustup target add aarch64-apple-darwin x86_64-apple-darwin
-cargo build --release --target aarch64-apple-darwin
-cargo build --release --target x86_64-apple-darwin
-lipo -create target/aarch64-apple-darwin/release/gale \
-     target/x86_64-apple-darwin/release/gale \
-     -output target/release/gale-universal
+# Build for production
+gale build --release
 
-# Windows — MSVC release build
-cargo build --release
-# Binary at: target\release\gale.exe
+# Run the production binary
+gale serve
+```
 
-# Docker (Linux only)
-docker build -t gale .
-# FROM scratch — final image < 10MB
+## Language Overview
+
+A `.gx` file contains components, server logic, and type declarations in a single syntax:
+
+```gx
+// Form validation with typed fields
+guard ContactForm {
+  name: string  @min(1) @max(100)
+  email: string @email
+}
+
+// Server-side mutation
+action submitContact(form: ContactForm) {
+  // Runs on the server — has access to DB, env, etc.
+  db.insert("contacts", form)
+  return { success: true }
+}
+
+// Page component with reactive state
+out ui ContactPage {
+  head {
+    title: "Contact Us"
+  }
+
+  signal submitted = false
+
+  <main>
+    when !submitted.get() {
+      <form action={submitContact}>
+        <input type="text" name="name" placeholder="Name" />
+        <input type="email" name="email" placeholder="Email" />
+        <button type="submit">"Send"</button>
+      </form>
+    }
+    when submitted.get() {
+      <p>"Thank you for reaching out!"</p>
+    }
+  </main>
+}
+```
+
+### Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Components** | `out ui Name { }` with HTML templates, reactive code, and `<head>` metadata |
+| **Layouts** | `out layout Name { }` with `slot` for page injection |
+| **Reactivity** | `signal`, `derive`, `effect`, `watch`, `batch` — fine-grained, no virtual DOM |
+| **Guards** | Typed form validation: `guard Name { field: type @validator }` |
+| **Actions** | Server mutations: `action name(input: Guard) { }` |
+| **Channels** | WebSocket communication: `channel Name { }` |
+| **Queries** | Reactive data fetching with caching, retries, stale-time |
+| **Stores** | Shared reactive state across components |
+| **API routes** | REST endpoints: `out api Resource { get() { } post() { } }` |
+| **Middleware** | Request/response interceptors: `middleware Name for /path { }` |
+| **Env** | Typed environment variables with compile-time validation |
+
+### Template Directives
+
+```gx
+// Conditional rendering
+when condition { <p>"Visible"</p> }
+
+// List rendering
+each item in items { <li>{item.name}</li> }
+
+// Two-way binding
+<input bind:value={name} />
+
+// Event handling
+<button on:click={handler}>"Click"</button>
+
+// CSS transitions
+<div transition:fade>"Animated"</div>
+
+// Conditional classes
+<div class:active={isActive}>"Tab"</div>
+```
+
+### Type System
+
+```gx
+// Primitives
+let x: int = 42
+let y: float = 3.14
+let s: string = "hello"
+let b: bool = true
+
+// Optional types
+let name: string? = null
+
+// Arrays
+let items: string[] = ["a", "b", "c"]
+
+// Enums (shared between client and server)
+shared {
+  enum Status { Active, Inactive, Pending }
+}
+
+// Boundary blocks
+server { /* server-only code */ }
+client { /* client-only code */ }
+shared { /* available on both sides */ }
+```
+
+## Project Structure
+
+```
+my-app/
+  galex.toml          # Project configuration
+  app/
+    layout.gx         # Root layout (wraps all pages)
+    page.gx           # Home page (route: /)
+    about/
+      page.gx         # About page (route: /about)
+    blog/
+      [slug]/
+        page.gx       # Dynamic route (route: /blog/:slug)
+    guard.gx          # Shared guards
+    middleware.gx      # Route middleware
+  styles/
+    global.css         # Tailwind CSS entry point
+  public/
+    favicon.ico        # Static assets (served as-is)
+```
+
+Routing is file-based. `app/page.gx` maps to `/`, `app/about/page.gx` maps to `/about`, and `app/blog/[slug]/page.gx` maps to `/blog/:slug`.
+
+## CLI Commands
+
+```bash
+gale new [name]           # Create a new project
+gale dev                  # Dev server with hot reload
+gale build [--release]    # Compile to Rust binary
+gale serve                # Run production build
+gale check                # Type-check without building
+gale fmt [--check]        # Format .gx files
+gale lint                 # Static analysis
+gale test [--filter]      # Run test blocks
 ```
 
 ## Configuration
 
-Gale works with zero configuration. All settings have secure defaults and can be overridden via environment variables or an optional `gale.toml`:
-
 ```toml
-[server]
-bind = "0.0.0.0"
-port = 8080
-root = "./public"
-index = "index.html"
+# galex.toml
 
-[tls]
-enabled = false
-cert = "/path/to/cert.pem"
-key = "/path/to/key.pem"
-# acme = true  # Auto Let's Encrypt
+[project]
+name = "my-app"
 
-[limits]
-max_body_size = "10MB"
-max_uri_length = 8192
-request_timeout = "30s"
-rate_limit = 100          # req/s per IP
-max_connections_per_ip = 256
-
-[cache]
-default_max_age = 3600
-immutable_extensions = ["js", "css", "woff2", "png", "jpg", "gif", "svg"]
-immutable_max_age = 31536000
-
-[compression]
+[tailwind]
 enabled = true
-min_size = 1024
-algorithms = ["br", "gzip"]
 
-[logging]
-level = "info"
-format = "clf"             # "clf" | "json"
+[database]
+adapter = "postgres"      # or "sqlite"
+
+[auth]
+strategy = "session"      # or "jwt"
 ```
 
-## Performance targets
+## Production Build
 
-| Metric | Target | Measured against |
-|--------|--------|-----------------|
-| Requests/sec (static HTML) | > 100,000 | wrk, 12 threads, 400 connections |
-| p99 latency | < 5ms | Under sustained load |
-| Memory (RSS) | < 20MB | Under heavy load |
-| Binary size | < 5MB | Release + LTO + strip |
-| Startup time | < 50ms | Cold start to first request served |
+```bash
+# Build optimized binary with asset hashing
+gale build --release
+
+# Output:
+# dist/
+#   my-app(.exe)          # Single binary (< 10MB)
+#   public/
+#     _gale/
+#       runtime.a1b2c3.js # Content-hashed assets
+#       styles.d4e5f6.css
+#     favicon.ico          # User assets
+
+# Run it
+gale serve
+
+# Or with Docker
+gale build --release --docker
+docker build -t my-app dist/
+docker run -p 8080:8080 my-app
+```
+
+The production binary contains the HTTP server, SSR renderer, server actions, API endpoints, WebSocket handlers, and static file serving. Configuration is read from `gale.toml` and environment variables at runtime (no rebuild needed).
+
+## Architecture
+
+```
+.gx source files
+  |
+  v
+Parser --> Type Checker --> Code Generator
+  |              |               |
+  |              |               +--> Rust server code (Axum handlers, SSR)
+  |              |               +--> JavaScript (hydration, reactivity)
+  |              |               +--> CSS (Tailwind, transitions)
+  |              |
+  v              v
+ AST        Type errors
+                 |
+                 v
+           cargo build --release
+                 |
+                 v
+         Single native binary
+```
+
+**Runtime stack**: Axum 0.8 + Tokio (async I/O) + tower-http (middleware) + tracing (logging)
+
+**Client runtime**: < 3KB gzipped. Fine-grained reactivity with direct DOM mutations. No virtual DOM, no diffing, no framework overhead.
+
+## Examples
+
+See [`examples/`](examples/) for complete working projects:
+
+- **test_app** — Minimal two-page app (pipeline verification)
 
 ## License
 
@@ -196,4 +262,4 @@ MIT/Apache-2.0.
 
 ---
 
-<p align="center"><em>Built with Rust.</em></p>
+<p align="center"><em>Write once, compile everywhere. Powered by Rust.</em></p>

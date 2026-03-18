@@ -139,6 +139,99 @@ pub async fn run(config: Config) {
     }
 }
 
+/// Run the server with additional application routes.
+///
+/// The `extra_routes` router is merged **before** the static file
+/// fallback, giving explicit application endpoints (actions, API
+/// routes, WebSocket upgrades) priority over static file serving.
+///
+/// The full Gale middleware stack (security headers, path security,
+/// request limits, compression, caching, rate limiting, logging,
+/// TLS) is applied on top.
+///
+/// This is the entry point used by GaleX-generated server projects.
+pub async fn run_with_app(config: Config, extra_routes: Router) {
+    let canonical_root = std::path::PathBuf::from(&config.root)
+        .canonicalize()
+        .unwrap_or_else(|e| {
+            eprintln!("Fatal: cannot resolve document root '{}': {e}", config.root);
+            std::process::exit(1);
+        });
+
+    let security_state = PathSecurityState {
+        canonical_root,
+        block_dotfiles: config.block_dotfiles,
+    };
+
+    let headers_state = SecurityHeadersState::from_config(&config.security_headers);
+    let limits_state = RequestLimitsState::from_config(&config.limits);
+
+    let compression_layer = crate::compression::build_layer(&config.compression);
+
+    let cache_state = crate::cache::CacheState::new(&config.cache, config.compression.enabled);
+
+    let rate_limit_state = crate::rate_limit::RateLimitState::new(&config.rate_limit);
+    crate::rate_limit::spawn_cleanup_task(&rate_limit_state);
+
+    // Merge extra routes with static file fallback — explicit routes take priority
+    let inner_app = extra_routes
+        .merge(crate::static_files::create_static_router(&config))
+        .layer(middleware::from_fn_with_state(
+            cache_state,
+            crate::cache::cache_middleware,
+        ))
+        .layer(compression_layer)
+        .layer(middleware::from_fn_with_state(
+            security_state,
+            path_security_middleware,
+        ))
+        .layer(middleware::from_fn_with_state(
+            limits_state,
+            request_limits_middleware,
+        ));
+
+    let inner_app = if let Some(cors_layer) = build_cors_layer(&config.cors) {
+        inner_app.layer(cors_layer)
+    } else {
+        inner_app
+    };
+
+    let inner_app = inner_app
+        .layer(middleware::from_fn_with_state(
+            headers_state,
+            security_headers_middleware,
+        ))
+        .layer(middleware::from_fn_with_state(
+            rate_limit_state,
+            crate::rate_limit::rate_limit_middleware,
+        ));
+
+    let mut app = Router::new();
+    if !config.health_endpoint.is_empty() {
+        app = app.route(
+            &config.health_endpoint,
+            axum::routing::get(crate::static_files::health_handler),
+        );
+    }
+    let app = app
+        .merge(inner_app)
+        .layer(middleware::from_fn(
+            crate::logging::request_logging_middleware,
+        ));
+
+    let addr: SocketAddr = format!("{}:{}", config.bind, config.port)
+        .parse()
+        .expect("invalid bind address or port");
+
+    let shutdown_timeout = Duration::from_secs(config.shutdown_timeout_secs);
+
+    if config.tls.enabled {
+        run_tls(app, addr, &config).await;
+    } else {
+        run_plain(app, addr, shutdown_timeout).await;
+    }
+}
+
 async fn run_plain(app: Router, addr: SocketAddr, shutdown_timeout: Duration) {
     let listener = TcpListener::bind(addr)
         .await

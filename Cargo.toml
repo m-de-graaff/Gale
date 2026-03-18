@@ -1,5 +1,5 @@
 [workspace]
-members = ["galex"]
+members = ["galex", "gale-registry"]
 
 [package]
 name = "gale"

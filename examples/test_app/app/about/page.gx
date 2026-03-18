@@ -1,0 +1,11 @@
+out ui AboutPage {
+  head {
+    title: "About"
+  }
+
+  <main>
+    <h1>"About"</h1>
+    <p>"This is an example page."</p>
+    <a href="/">"Back home"</a>
+  </main>
+}

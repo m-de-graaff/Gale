@@ -52,6 +52,32 @@ impl Span {
     }
 
     /// Merge two spans into one that covers both.
+    /// Check if a byte offset falls within this span.
+    pub fn contains_offset(&self, offset: u32) -> bool {
+        offset >= self.start && offset < self.end
+    }
+
+    /// Compute the end (line, col) given the source text.
+    ///
+    /// The `Span` only stores start line/col. This method scans the source
+    /// text to find the end position — needed for LSP `Range` conversion.
+    pub fn end_position(&self, source: &str) -> (u32, u32) {
+        let mut line = 1u32;
+        let mut col = 1u32;
+        for (i, ch) in source.char_indices() {
+            if i as u32 >= self.end {
+                break;
+            }
+            if ch == '\n' {
+                line += 1;
+                col = 1;
+            } else {
+                col += 1;
+            }
+        }
+        (line, col)
+    }
+
     pub fn merge(self, other: Span) -> Span {
         debug_assert_eq!(self.file_id, other.file_id);
         let start = self.start.min(other.start);
@@ -102,6 +128,18 @@ impl FileTable {
     /// Get the path for a file ID.
     pub fn get_path(&self, file_id: u32) -> Option<&Path> {
         self.files.get(file_id as usize).map(|p| p.as_path())
+    }
+
+    /// Find an existing file ID by path, or register a new one.
+    ///
+    /// Unlike [`add_file`], this avoids duplicate entries for the same path.
+    pub fn find_or_add_file(&mut self, path: PathBuf) -> u32 {
+        for (id, existing) in self.files.iter().enumerate() {
+            if existing == &path {
+                return id as u32;
+            }
+        }
+        self.add_file(path)
     }
 
     /// Format a span with its file path for error messages.

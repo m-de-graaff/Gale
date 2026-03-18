@@ -1,5 +1,7 @@
 # Build artifacts
 /target
+**/target/
+**/gale_build/
 
 # Editor/IDE
 *.swp
@@ -19,3 +21,9 @@ Thumbs.db
 # Benchmark artifacts
 benchmarks/fixtures/
 benchmarks/results/
+
+# Windows NUL device artifacts
+nul
+
+# AI tool working directories
+.opencode/

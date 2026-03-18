@@ -1,0 +1,467 @@
+//! Low-level Rust source code emitter with indent tracking.
+//!
+//! `RustEmitter` accumulates Rust source text in a `String` buffer,
+//! automatically inserting indentation at line starts. Higher-level
+//! helpers produce idiomatic Rust constructs (structs, impls, fns).
+
+use std::fmt::Write as _;
+
+/// A buffered Rust source code writer with automatic indentation.
+///
+/// All output goes through [`write`] or [`writeln`], which prepend the
+/// current indent prefix when a new line starts. Structural helpers like
+/// [`block`] and [`emit_struct`] build on these primitives.
+pub struct RustEmitter {
+    buf: String,
+    indent_level: usize,
+    at_line_start: bool,
+}
+
+/// Four spaces per indent level (standard `rustfmt` default).
+const INDENT: &str = "    ";
+
+impl RustEmitter {
+    // ── Construction ───────────────────────────────────────────────
+
+    /// Create a new, empty emitter at indent level 0.
+    pub fn new() -> Self {
+        Self {
+            buf: String::with_capacity(4096),
+            indent_level: 0,
+            at_line_start: true,
+        }
+    }
+
+    /// Consume the emitter and return the accumulated source code.
+    pub fn finish(self) -> String {
+        self.buf
+    }
+
+    /// Return a reference to the accumulated buffer (for assertions in tests).
+    pub fn as_str(&self) -> &str {
+        &self.buf
+    }
+
+    // ── Indent control ─────────────────────────────────────────────
+
+    /// Increase the indent level by one.
+    pub fn indent(&mut self) {
+        self.indent_level += 1;
+    }
+
+    /// Decrease the indent level by one (saturating at 0).
+    pub fn dedent(&mut self) {
+        self.indent_level = self.indent_level.saturating_sub(1);
+    }
+
+    /// Return the current indent level.
+    pub fn indent_level(&self) -> usize {
+        self.indent_level
+    }
+
+    // ── Low-level write ────────────────────────────────────────────
+
+    /// Write raw text, inserting the indent prefix if we're at a line start.
+    ///
+    /// Does **not** append a newline — use [`writeln`] for that.
+    pub fn write(&mut self, text: &str) {
+        if text.is_empty() {
+            return;
+        }
+        if self.at_line_start {
+            for _ in 0..self.indent_level {
+                self.buf.push_str(INDENT);
+            }
+            self.at_line_start = false;
+        }
+        self.buf.push_str(text);
+    }
+
+    /// Write text followed by a newline, auto-indenting at line start.
+    pub fn writeln(&mut self, text: &str) {
+        self.write(text);
+        self.buf.push('\n');
+        self.at_line_start = true;
+    }
+
+    /// Emit a blank line (no indentation, just `\n`).
+    pub fn newline(&mut self) {
+        self.buf.push('\n');
+        self.at_line_start = true;
+    }
+
+    // ── Formatted write (convenience) ──────────────────────────────
+
+    /// Write formatted text (like `write!`) without a trailing newline.
+    pub fn write_fmt(&mut self, args: std::fmt::Arguments<'_>) {
+        // Format into a temporary string, then delegate to write().
+        let text = std::fmt::format(args);
+        self.write(&text);
+    }
+
+    /// Write formatted text followed by a newline.
+    pub fn writeln_fmt(&mut self, args: std::fmt::Arguments<'_>) {
+        let text = std::fmt::format(args);
+        self.writeln(&text);
+    }
+
+    // ── Block helpers ──────────────────────────────────────────────
+
+    /// Emit a `header { ... }` block with auto-indent.
+    ///
+    /// ```text
+    /// header {
+    ///     <body produced by f>
+    /// }
+    /// ```
+    pub fn block(&mut self, header: &str, f: impl FnOnce(&mut Self)) {
+        self.writeln(&format!("{header} {{"));
+        self.indent();
+        f(self);
+        self.dedent();
+        self.writeln("}");
+    }
+
+    /// Emit a `header { ... }` block, but with a blank line after the closing brace.
+    pub fn block_with_sep(&mut self, header: &str, f: impl FnOnce(&mut Self)) {
+        self.block(header, f);
+        self.newline();
+    }
+
+    // ── Rust-specific helpers ──────────────────────────────────────
+
+    /// Emit a `use` import statement.
+    pub fn emit_use(&mut self, path: &str) {
+        self.writeln(&format!("use {path};"));
+    }
+
+    /// Emit an attribute on its own line (e.g. `#[derive(Debug, Serialize)]`).
+    pub fn emit_attribute(&mut self, attr: &str) {
+        self.writeln(&format!("#[{attr}]"));
+    }
+
+    /// Emit a doc comment line (`/// text`).
+    pub fn emit_doc_comment(&mut self, text: &str) {
+        self.writeln(&format!("/// {text}"));
+    }
+
+    /// Emit a regular comment line (`// text`).
+    pub fn emit_comment(&mut self, text: &str) {
+        self.writeln(&format!("// {text}"));
+    }
+
+    /// Emit a file-level header comment.
+    pub fn emit_file_header(&mut self, description: &str) {
+        self.writeln(&format!("//! {description}"));
+        self.writeln("//!");
+        self.writeln("//! Generated by GaleX compiler — do not edit manually.");
+        self.newline();
+    }
+
+    // ── Struct emission ────────────────────────────────────────────
+
+    /// Emit a Rust struct with `pub` fields.
+    ///
+    /// `attrs` are placed before the struct (e.g. `["derive(Debug, Serialize, Deserialize)"]`).
+    /// `fields` are `(name, type_str)` pairs.
+    pub fn emit_struct(&mut self, attrs: &[&str], vis: &str, name: &str, fields: &[(&str, &str)]) {
+        for attr in attrs {
+            self.emit_attribute(attr);
+        }
+        let vis_prefix = if vis.is_empty() {
+            String::new()
+        } else {
+            format!("{vis} ")
+        };
+        self.block(&format!("{vis_prefix}struct {name}"), |e| {
+            for (field_name, field_type) in fields {
+                e.writeln(&format!("pub {field_name}: {field_type},"));
+            }
+        });
+    }
+
+    // ── Impl block emission ────────────────────────────────────────
+
+    /// Emit an `impl TypeName { ... }` block.
+    pub fn emit_impl(&mut self, type_name: &str, f: impl FnOnce(&mut Self)) {
+        self.block_with_sep(&format!("impl {type_name}"), f);
+    }
+
+    // ── Function emission ──────────────────────────────────────────
+
+    /// Emit a function signature line (without the body).
+    ///
+    /// Returns the formatted signature string for use in [`block`].
+    pub fn fn_signature(
+        vis: &str,
+        is_async: bool,
+        name: &str,
+        params: &[(&str, &str)],
+        ret: Option<&str>,
+    ) -> String {
+        let mut sig = String::new();
+        if !vis.is_empty() {
+            let _ = write!(sig, "{vis} ");
+        }
+        if is_async {
+            sig.push_str("async ");
+        }
+        let _ = write!(sig, "fn {name}(");
+        for (i, (pname, ptype)) in params.iter().enumerate() {
+            if i > 0 {
+                sig.push_str(", ");
+            }
+            let _ = write!(sig, "{pname}: {ptype}");
+        }
+        sig.push(')');
+        if let Some(ret_ty) = ret {
+            if ret_ty != "()" {
+                let _ = write!(sig, " -> {ret_ty}");
+            }
+        }
+        sig
+    }
+
+    /// Emit a complete function (signature + body).
+    pub fn emit_fn(
+        &mut self,
+        vis: &str,
+        is_async: bool,
+        name: &str,
+        params: &[(&str, &str)],
+        ret: Option<&str>,
+        body: impl FnOnce(&mut Self),
+    ) {
+        let sig = Self::fn_signature(vis, is_async, name, params, ret);
+        self.block(&sig, body);
+    }
+
+    // ── Enum emission ──────────────────────────────────────────────
+
+    /// Emit a Rust enum with unit variants (no fields).
+    pub fn emit_unit_enum(&mut self, attrs: &[&str], vis: &str, name: &str, variants: &[&str]) {
+        for attr in attrs {
+            self.emit_attribute(attr);
+        }
+        let vis_prefix = if vis.is_empty() {
+            String::new()
+        } else {
+            format!("{vis} ")
+        };
+        self.block(&format!("{vis_prefix}enum {name}"), |e| {
+            for variant in variants {
+                e.writeln(&format!("{variant},"));
+            }
+        });
+    }
+}
+
+impl Default for RustEmitter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+// ── Tests ──────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_emitter_produces_empty_string() {
+        let e = RustEmitter::new();
+        assert_eq!(e.finish(), "");
+    }
+
+    #[test]
+    fn writeln_appends_newline() {
+        let mut e = RustEmitter::new();
+        e.writeln("hello");
+        assert_eq!(e.finish(), "hello\n");
+    }
+
+    #[test]
+    fn indent_and_dedent_tracking() {
+        let mut e = RustEmitter::new();
+        assert_eq!(e.indent_level(), 0);
+        e.indent();
+        assert_eq!(e.indent_level(), 1);
+        e.indent();
+        assert_eq!(e.indent_level(), 2);
+        e.dedent();
+        assert_eq!(e.indent_level(), 1);
+        e.dedent();
+        e.dedent(); // saturates at 0
+        assert_eq!(e.indent_level(), 0);
+    }
+
+    #[test]
+    fn indent_inserts_spaces() {
+        let mut e = RustEmitter::new();
+        e.indent();
+        e.writeln("inner");
+        assert_eq!(e.finish(), "    inner\n");
+    }
+
+    #[test]
+    fn nested_indent() {
+        let mut e = RustEmitter::new();
+        e.writeln("level0");
+        e.indent();
+        e.writeln("level1");
+        e.indent();
+        e.writeln("level2");
+        e.dedent();
+        e.writeln("level1");
+        e.dedent();
+        e.writeln("level0");
+        assert_eq!(
+            e.finish(),
+            "level0\n    level1\n        level2\n    level1\nlevel0\n"
+        );
+    }
+
+    #[test]
+    fn block_formatting() {
+        let mut e = RustEmitter::new();
+        e.block("fn main()", |e| {
+            e.writeln("println!(\"hello\");");
+        });
+        let output = e.finish();
+        assert_eq!(output, "fn main() {\n    println!(\"hello\");\n}\n");
+    }
+
+    #[test]
+    fn nested_blocks() {
+        let mut e = RustEmitter::new();
+        e.block("mod outer", |e| {
+            e.block("fn inner()", |e| {
+                e.writeln("let x = 1;");
+            });
+        });
+        let output = e.finish();
+        assert!(output.contains("    fn inner() {\n"));
+        assert!(output.contains("        let x = 1;\n"));
+        assert!(output.contains("    }\n"));
+    }
+
+    #[test]
+    fn emit_struct_output() {
+        let mut e = RustEmitter::new();
+        e.emit_struct(
+            &["derive(Debug, Serialize)"],
+            "pub",
+            "User",
+            &[("name", "String"), ("age", "i64")],
+        );
+        let output = e.finish();
+        assert!(output.contains("#[derive(Debug, Serialize)]"));
+        assert!(output.contains("pub struct User {"));
+        assert!(output.contains("    pub name: String,"));
+        assert!(output.contains("    pub age: i64,"));
+        assert!(output.contains("}"));
+    }
+
+    #[test]
+    fn emit_fn_sync() {
+        let mut e = RustEmitter::new();
+        e.emit_fn(
+            "pub",
+            false,
+            "add",
+            &[("a", "i64"), ("b", "i64")],
+            Some("i64"),
+            |e| {
+                e.writeln("a + b");
+            },
+        );
+        let output = e.finish();
+        assert!(output.contains("pub fn add(a: i64, b: i64) -> i64 {"));
+    }
+
+    #[test]
+    fn emit_fn_async_void() {
+        let mut e = RustEmitter::new();
+        e.emit_fn("pub", true, "run", &[], None, |e| {
+            e.writeln("// body");
+        });
+        let output = e.finish();
+        assert!(output.contains("pub async fn run() {"));
+    }
+
+    #[test]
+    fn fn_signature_formatting() {
+        let sig = RustEmitter::fn_signature(
+            "pub",
+            true,
+            "handle",
+            &[("req", "Request")],
+            Some("Response"),
+        );
+        assert_eq!(sig, "pub async fn handle(req: Request) -> Response");
+    }
+
+    #[test]
+    fn fn_signature_void_omits_return() {
+        let sig = RustEmitter::fn_signature("", false, "noop", &[], Some("()"));
+        assert_eq!(sig, "fn noop()");
+    }
+
+    #[test]
+    fn emit_unit_enum() {
+        let mut e = RustEmitter::new();
+        e.emit_unit_enum(
+            &["derive(Debug, Clone, Serialize, Deserialize)"],
+            "pub",
+            "Status",
+            &["Active", "Inactive", "Pending"],
+        );
+        let output = e.finish();
+        assert!(output.contains("pub enum Status {"));
+        assert!(output.contains("    Active,"));
+        assert!(output.contains("    Inactive,"));
+        assert!(output.contains("    Pending,"));
+    }
+
+    #[test]
+    fn emit_use_statement() {
+        let mut e = RustEmitter::new();
+        e.emit_use("axum::Router");
+        assert_eq!(e.finish(), "use axum::Router;\n");
+    }
+
+    #[test]
+    fn emit_attribute_line() {
+        let mut e = RustEmitter::new();
+        e.emit_attribute("allow(dead_code)");
+        assert_eq!(e.finish(), "#[allow(dead_code)]\n");
+    }
+
+    #[test]
+    fn emit_file_header() {
+        let mut e = RustEmitter::new();
+        e.emit_file_header("Action handlers.");
+        let output = e.finish();
+        assert!(output.starts_with("//! Action handlers.\n"));
+        assert!(output.contains("Generated by GaleX compiler"));
+    }
+
+    #[test]
+    fn newline_inserts_blank_line() {
+        let mut e = RustEmitter::new();
+        e.writeln("a");
+        e.newline();
+        e.writeln("b");
+        assert_eq!(e.finish(), "a\n\nb\n");
+    }
+
+    #[test]
+    fn write_without_newline() {
+        let mut e = RustEmitter::new();
+        e.write("hello ");
+        e.write("world");
+        e.writeln("");
+        assert_eq!(e.finish(), "hello world\n");
+    }
+}

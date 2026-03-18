@@ -9,13 +9,54 @@ license = "MIT/Apache-2.0"
 name = "galex"
 path = "src/lib.rs"
 
+[[bin]]
+name = "gale"
+path = "src/main.rs"
+
+[[bin]]
+name = "gale-lsp"
+path = "src/main_lsp.rs"
+
 [dependencies]
 unicode-xid = "0.2"
+smol_str = "0.3"
+walkdir = "2"
+clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+notify = "7"
+notify-debouncer-mini = "0.5"
+axum = { version = "0.8", features = ["ws"] }
+hyper = { version = "1", features = ["client", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
+futures-util = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", features = ["json", "multipart"] }
+urlencoding = "2"
+dialoguer = "0.11"
+toml = "0.8"
+sha2 = "0.10"
+flate2 = "1"
+tar = "0.4"
+semver = "1"
+dirs-next = "2"
+tower-lsp = "0.20"
+lsp-types = "0.94"
 
 [dev-dependencies]
 proptest = "1"
 criterion = { version = "0.5", features = ["html_reports"] }
+insta = "1"
+tempfile = "3"
+
+[features]
+integration-tests = []
 
 [[bench]]
 name = "lexer_bench"
+harness = false
+
+[[bench]]
+name = "typechecker_bench"
 harness = false

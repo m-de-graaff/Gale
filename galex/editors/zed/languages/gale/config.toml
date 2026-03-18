@@ -1,0 +1,14 @@
+name = "GaleX"
+grammar = "gale"
+path_suffixes = ["gx"]
+line_comments = ["//"]
+block_comment = ["/*", "*/"]
+brackets = [
+  { start = "{", end = "}", close = true, newline = true },
+  { start = "(", end = ")", close = true, newline = false },
+  { start = "[", end = "]", close = true, newline = false },
+  { start = "<", end = ">", close = false, newline = false },
+]
+autoclose_before = ";:.,=})]>"
+word_characters = ["-"]
+tab_size = 2

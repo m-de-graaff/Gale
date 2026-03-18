@@ -15,15 +15,32 @@
 //! }
 //! ```
 
+pub mod ast;
+pub mod checker;
+pub mod codegen;
+pub mod commands;
+pub mod compiler;
+pub mod config;
+pub mod dev;
+pub mod fmt;
+pub mod lint;
+pub mod lsp;
+pub mod registry;
 pub mod diagnostic;
 pub mod error;
 pub mod lexer;
+pub mod parser;
+pub mod router;
 pub mod span;
+pub mod tailwind;
 pub mod token;
+pub mod types;
 
 // Re-export key types for convenience
+pub use checker::TypeChecker;
 pub use diagnostic::DiagnosticRenderer;
 pub use error::{LexError, LexResult};
 pub use lexer::{lex, LexMode, Lexer};
 pub use span::{FileTable, Span};
 pub use token::{Token, TokenWithSpan};
+pub use types::ty::{TypeData, TypeId, TypeInterner};
