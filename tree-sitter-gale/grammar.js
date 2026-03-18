@@ -551,9 +551,9 @@ module.exports = grammar({
           ["&&", PREC.AND],
           ["||", PREC.OR],
           ["??", PREC.NULL_COALESCE],
-        ].map(([op, prec]) =>
+        ].map(([op, precedence]) =>
           prec.left(
-            prec,
+            precedence,
             seq(
               field("left", $._expression),
               field("operator", alias(op, $.operator)),

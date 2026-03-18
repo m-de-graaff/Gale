@@ -124,10 +124,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
           cd galex/editors/vscode
           pnpm install
           pnpm run package
-          mv *.vsix "../../../gale-vscode-${GITHUB_REF_NAME}.vsix"
+          mv *.vsix "../../../gale-vscode-${VERSION}.vsix"
 
       - name: Build Zed extension WASM
         shell: bash
@@ -149,16 +150,17 @@ jobs:
           cp -R galex/editors/zed/languages staging/zed/gale-zed/languages
           cp -R tree-sitter-gale staging/zed/gale-zed/tree-sitter-gale
           chmod +x staging/zed/gale-zed/install-zed.sh
+          VERSION="${GITHUB_REF_NAME#v}"
           cd staging/zed
-          zip -r "../../gale-zed-${GITHUB_REF_NAME}.zip" gale-zed
+          zip -r "../../gale-zed-${VERSION}.zip" gale-zed
 
       - name: Upload editor artifacts
         uses: actions/upload-artifact@v4
         with:
           name: gale-editors
           path: |
-            gale-vscode-${{ github.ref_name }}.vsix
-            gale-zed-${{ github.ref_name }}.zip
+            gale-vscode-*.vsix
+            gale-zed-*.zip
           if-no-files-found: error
 
   release:

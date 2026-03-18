@@ -114,6 +114,8 @@ enum Command {
     Publish,
     /// Authenticate with the package registry
     Login,
+    /// Download and install the latest version of gale
+    SelfUpdate,
 }
 
 fn main() {
@@ -150,6 +152,7 @@ fn main() {
         Command::Search { query } => galex::commands::search::run(&query),
         Command::Publish => galex::commands::publish::run(),
         Command::Login => galex::commands::login::run(),
+        Command::SelfUpdate => galex::commands::self_update::run(),
     };
     process::exit(exit_code);
 }

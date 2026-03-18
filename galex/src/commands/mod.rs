@@ -10,6 +10,7 @@ pub mod publish;
 pub mod remove;
 pub mod scaffold;
 pub mod search;
+pub mod self_update;
 pub mod test;
 pub mod test_runner;
 pub mod update;
