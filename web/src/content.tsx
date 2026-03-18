@@ -57,12 +57,12 @@ export const RELEASES_URL = `${REPO_URL}/releases`
 export const installTabs: InstallTab[] = [
   {
     label: 'macOS / Linux',
-    command: 'curl -fsSL https://gale.dev/install.sh | sh',
+    command: 'curl -fsSL https://get-gale.vercel.app/install.sh | sh',
     note: 'Installs both `gale` and `gale-lsp` into ~/.local/bin.',
   },
   {
     label: 'Windows',
-    command: 'irm https://gale.dev/install.ps1 | iex',
+    command: 'irm https://get-gale.vercel.app/install.ps1 | iex',
     note: 'Installs `gale.exe` and `gale-lsp.exe` into %LOCALAPPDATA%\\Gale\\bin.',
   },
   {
@@ -360,10 +360,10 @@ export const docsPages: DocPage[] = [
         title: 'Install Gale',
         body: 'The recommended path is the Gale SDK installer — it puts both `gale` and `gale-lsp` on your machine in one step. `cargo install galex` still works as a fallback.',
         code: `# macOS / Linux
-curl -fsSL https://gale.dev/install.sh | sh
+curl -fsSL https://get-gale.vercel.app/install.sh | sh
 
 # Windows
-irm https://gale.dev/install.ps1 | iex
+irm https://get-gale.vercel.app/install.ps1 | iex
 
 # Verify
 gale --version

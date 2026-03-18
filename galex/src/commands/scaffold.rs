@@ -66,7 +66,7 @@ pub fn generate_project(opts: &ScaffoldOptions) -> Result<(), std::io::Error> {
 fn galex_toml(opts: &ScaffoldOptions) -> String {
     let mut toml = format!(
         r#"# GaleX project configuration
-# Documentation: https://gale.dev/docs/config
+# Documentation: https://get-gale.vercel.app/docs/config
 
 [project]
 name = "{}"

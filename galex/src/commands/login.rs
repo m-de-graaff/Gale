@@ -3,7 +3,7 @@
 /// Run the `gale login` command.
 pub fn run() -> i32 {
     let token: String = match dialoguer::Input::new()
-        .with_prompt("API token (from registry.gale.dev)")
+        .with_prompt("API token (from registry.get-gale.vercel.app)")
         .interact_text()
     {
         Ok(t) => t,

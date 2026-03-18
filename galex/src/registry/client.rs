@@ -4,7 +4,7 @@ use std::path::Path;
 
 use super::{PackageMeta, RegistryError};
 
-const DEFAULT_REGISTRY: &str = "https://registry.gale.dev";
+const DEFAULT_REGISTRY: &str = "https://registry.get-gale.vercel.app";
 
 /// HTTP client for the GaleX package registry.
 pub struct RegistryClient {

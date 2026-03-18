@@ -12,9 +12,15 @@ RUN apk add --no-cache musl-dev
 
 WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
+# Stub manifests for workspace members not needed in this image,
+# so Cargo can parse the workspace without their full source trees.
+RUN mkdir -p galex gale-registry benches && \
+    printf '[package]\nname = "galex"\nversion = "0.1.0"\nedition = "2021"\n' > galex/Cargo.toml && \
+    printf '[package]\nname = "gale-registry"\nversion = "0.1.0"\nedition = "2021"\n' > gale-registry/Cargo.toml && \
+    touch benches/throughput.rs
 COPY src/ src/
 
-RUN cargo build --release --target x86_64-unknown-linux-musl
+RUN cargo build --release --target x86_64-unknown-linux-musl -p gale
 
 # Stage 2: Bare minimum runtime
 FROM scratch

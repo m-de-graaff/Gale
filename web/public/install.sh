@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Gale SDK installer — macOS and Linux
-# Usage: curl -fsSL https://gale.dev/install.sh | sh
+# Usage: curl -fsSL https://get-gale.vercel.app/install.sh | sh
 #
 # Installs:
 #   gale      — the Gale CLI (new, dev, build, check, lint, fmt, test)
@@ -164,7 +164,7 @@ printf '\n'
 info "  gale --version"
 info "  gale new my-app && cd my-app && gale dev"
 printf '\n'
-printf "Editor setup: https://gale.dev/editors/vscode  |  https://gale.dev/editors/zed\n"
+printf "Editor setup: https://get-gale.vercel.app/editors/vscode  |  https://get-gale.vercel.app/editors/zed\n"
 printf '\n'
 
 fallback_to_cargo() {

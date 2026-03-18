@@ -1,5 +1,5 @@
 # Gale SDK installer — Windows (PowerShell)
-# Usage: irm https://gale.dev/install.ps1 | iex
+# Usage: irm https://get-gale.vercel.app/install.ps1 | iex
 #
 # Installs:
 #   gale.exe      — the Gale CLI
@@ -140,7 +140,7 @@ Write-Host ""
 Write-Info "  gale --version"
 Write-Info "  gale new my-app; cd my-app; gale dev"
 Write-Host ""
-Write-Host "Editor setup: https://gale.dev/editors/vscode  |  https://gale.dev/editors/zed" -ForegroundColor DarkGray
+Write-Host "Editor setup: https://get-gale.vercel.app/editors/vscode  |  https://get-gale.vercel.app/editors/zed" -ForegroundColor DarkGray
 Write-Host ""
 
 function Invoke-FallbackToCargo {

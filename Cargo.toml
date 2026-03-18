@@ -1,3 +1,6 @@
+[workspace]
+members = ["galex", "gale-registry"]
+
 [package]
 name = "gale"
 version = "0.1.0"
