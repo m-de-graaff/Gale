@@ -6,7 +6,7 @@
 # ─────────────────────────────────────────────────
 
 # Stage 1: Build static binary
-FROM rust:1.83-alpine AS builder
+FROM rust:alpine AS builder
 
 RUN apk add --no-cache musl-dev
 
