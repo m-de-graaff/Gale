@@ -93,5 +93,7 @@ pub fn run() -> i32 {
 fn load_token() -> Option<String> {
     let home = dirs_next::home_dir()?;
     let creds = home.join(".gale").join("credentials");
-    std::fs::read_to_string(creds).ok().map(|s| s.trim().to_string())
+    std::fs::read_to_string(creds)
+        .ok()
+        .map(|s| s.trim().to_string())
 }

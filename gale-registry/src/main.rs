@@ -35,9 +35,8 @@ struct AppState {
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let data_dir = PathBuf::from(
-        std::env::var("REGISTRY_DATA").unwrap_or_else(|_| "./registry_data".into()),
-    );
+    let data_dir =
+        PathBuf::from(std::env::var("REGISTRY_DATA").unwrap_or_else(|_| "./registry_data".into()));
     let storage_dir = data_dir.join("tarballs");
     std::fs::create_dir_all(&storage_dir).expect("failed to create storage dir");
 
@@ -49,8 +48,7 @@ async fn main() {
         .ok()
         .and_then(|p| p.parse().ok())
         .unwrap_or(4873);
-    let base_url = std::env::var("BASE_URL")
-        .unwrap_or_else(|_| format!("http://localhost:{port}"));
+    let base_url = std::env::var("BASE_URL").unwrap_or_else(|_| format!("http://localhost:{port}"));
 
     let state = std::sync::Arc::new(AppState {
         db: Mutex::new(conn),
@@ -60,7 +58,10 @@ async fn main() {
 
     let app = Router::new()
         .route("/api/packages/:name", get(get_package))
-        .route("/api/packages/:name/:version/download", get(download_package))
+        .route(
+            "/api/packages/:name/:version/download",
+            get(download_package),
+        )
         .route("/api/packages", post(publish_package))
         .route("/api/search", get(search_packages))
         .with_state(state);
@@ -93,8 +94,7 @@ async fn get_package(
     let db = state.db.lock().unwrap();
     match db::get_latest_version(&db, &name) {
         Ok(Some(ver)) => {
-            let deps: Vec<String> =
-                serde_json::from_str(&ver.dependencies).unwrap_or_default();
+            let deps: Vec<String> = serde_json::from_str(&ver.dependencies).unwrap_or_default();
             Json(PackageResponse {
                 name: name.clone(),
                 version: ver.version.clone(),
@@ -121,16 +121,14 @@ async fn download_package(
     State(state): State<std::sync::Arc<AppState>>,
     Path((name, version)): Path<(String, String)>,
 ) -> impl IntoResponse {
-    let tarball_path = state
-        .storage_dir
-        .join(format!("{}_{}.tar.gz", name.replace('/', "_"), version));
+    let tarball_path =
+        state
+            .storage_dir
+            .join(format!("{}_{}.tar.gz", name.replace('/', "_"), version));
 
     match std::fs::read(&tarball_path) {
         Ok(data) => (
-            [(
-                axum::http::header::CONTENT_TYPE,
-                "application/gzip",
-            )],
+            [(axum::http::header::CONTENT_TYPE, "application/gzip")],
             data,
         )
             .into_response(),

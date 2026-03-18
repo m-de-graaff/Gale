@@ -62,10 +62,7 @@ impl FileWatcher {
     ///
     /// - `app_dir` — the `app/` source directory (recursive)
     /// - `project_dir` — the project root (for `galex.toml`, `public/`, `styles/`)
-    pub fn start(
-        app_dir: &Path,
-        project_dir: &Path,
-    ) -> Result<Self, notify::Error> {
+    pub fn start(app_dir: &Path, project_dir: &Path) -> Result<Self, notify::Error> {
         let (std_tx, std_rx) = std_mpsc::channel();
         let mut debouncer = new_debouncer(Duration::from_millis(50), std_tx)?;
 

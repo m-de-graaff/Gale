@@ -33,7 +33,11 @@ impl LanguageServer for GaleLsp {
                 )),
                 completion_provider: Some(CompletionOptions {
                     trigger_characters: Some(vec![
-                        ".".into(), ":".into(), "<".into(), "\"".into(), "/".into(),
+                        ".".into(),
+                        ":".into(),
+                        "<".into(),
+                        "\"".into(),
+                        "/".into(),
                     ]),
                     ..Default::default()
                 }),
@@ -145,8 +149,7 @@ impl LanguageServer for GaleLsp {
             None => return Ok(None),
         };
         let offset = position_to_offset(source, pos);
-        Ok(goto::goto_definition(&docs, uri, file_id, offset)
-            .map(GotoDefinitionResponse::Scalar))
+        Ok(goto::goto_definition(&docs, uri, file_id, offset).map(GotoDefinitionResponse::Scalar))
     }
 
     async fn references(&self, params: ReferenceParams) -> Result<Option<Vec<Location>>> {
@@ -179,25 +182,30 @@ impl LanguageServer for GaleLsp {
             None => return Ok(None),
         };
         let offset = position_to_offset(source, pos);
-        Ok(goto::rename_symbol(&docs, file_id, offset, &params.new_name))
+        Ok(goto::rename_symbol(
+            &docs,
+            file_id,
+            offset,
+            &params.new_name,
+        ))
     }
 
     async fn code_action(&self, params: CodeActionParams) -> Result<Option<CodeActionResponse>> {
-        let actions = quickfix::provide_code_actions(
-            &params.text_document.uri,
-            &params.context.diagnostics,
-        );
+        let actions =
+            quickfix::provide_code_actions(&params.text_document.uri, &params.context.diagnostics);
         Ok(if actions.is_empty() {
             None
         } else {
-            Some(actions.into_iter().map(CodeActionOrCommand::CodeAction).collect())
+            Some(
+                actions
+                    .into_iter()
+                    .map(CodeActionOrCommand::CodeAction)
+                    .collect(),
+            )
         })
     }
 
-    async fn formatting(
-        &self,
-        params: DocumentFormattingParams,
-    ) -> Result<Option<Vec<TextEdit>>> {
+    async fn formatting(&self, params: DocumentFormattingParams) -> Result<Option<Vec<TextEdit>>> {
         let docs = self.documents.lock().unwrap();
         let source = match docs.get_source(&params.text_document.uri) {
             Some(s) => s,

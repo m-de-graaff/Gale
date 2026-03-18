@@ -4,7 +4,7 @@ use std::path::Path;
 
 use crate::config::{DependencySpec, GalexConfig};
 use crate::registry::client::RegistryClient;
-use crate::registry::lockfile::{Lockfile, LockedPackage};
+use crate::registry::lockfile::{LockedPackage, Lockfile};
 use crate::registry::tarball;
 
 /// Run the `gale add` command.

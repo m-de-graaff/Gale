@@ -129,9 +129,7 @@ impl RegistryClient {
 
         if !response.status().is_success() {
             let body = response.text().await.unwrap_or_default();
-            return Err(RegistryError::Network(format!(
-                "publish failed: {body}"
-            )));
+            return Err(RegistryError::Network(format!("publish failed: {body}")));
         }
 
         Ok(())

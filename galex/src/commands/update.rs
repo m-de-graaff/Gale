@@ -4,7 +4,7 @@ use std::path::Path;
 
 use crate::config::GalexConfig;
 use crate::registry::client::RegistryClient;
-use crate::registry::lockfile::{Lockfile, LockedPackage};
+use crate::registry::lockfile::{LockedPackage, Lockfile};
 use crate::registry::tarball;
 
 /// Run the `gale update` command.
@@ -80,10 +80,7 @@ pub fn run(package: Option<&str>) -> i32 {
                 checksum: meta.checksum.clone(),
             });
 
-            eprintln!(
-                "    Updated {} → v{}",
-                pkg_name, meta.version
-            );
+            eprintln!("    Updated {} → v{}", pkg_name, meta.version);
             updated += 1;
         }
 
@@ -94,7 +91,11 @@ pub fn run(package: Option<&str>) -> i32 {
         if updated == 0 {
             eprintln!("  All packages are up to date");
         } else {
-            eprintln!("  Updated {} package{}", updated, if updated != 1 { "s" } else { "" });
+            eprintln!(
+                "  Updated {} package{}",
+                updated,
+                if updated != 1 { "s" } else { "" }
+            );
         }
 
         0

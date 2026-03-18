@@ -12,7 +12,11 @@ pub fn run(query: &str) -> i32 {
                 if results.is_empty() {
                     eprintln!("  No packages found for '{query}'");
                 } else {
-                    eprintln!("  Found {} package{}:", results.len(), if results.len() != 1 { "s" } else { "" });
+                    eprintln!(
+                        "  Found {} package{}:",
+                        results.len(),
+                        if results.len() != 1 { "s" } else { "" }
+                    );
                     eprintln!();
                     for pkg in &results {
                         eprintln!("  {:<30} v{}", pkg.name, pkg.version);

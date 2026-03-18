@@ -176,7 +176,10 @@ fn cmd_build(
     let total_steps = if release { 9 } else { 8 };
 
     // ── Step 1: Discover routes ────────────────────────────────
-    eprintln!("[1/{total_steps}] Discovering routes in {}...", app_dir.display());
+    eprintln!(
+        "[1/{total_steps}] Discovering routes in {}...",
+        app_dir.display()
+    );
     let routes = match galex::router::discovery::discover_routes(app_dir) {
         Ok(routes) => routes,
         Err(errors) => {
@@ -197,17 +200,18 @@ fn cmd_build(
     let mut added_files = std::collections::HashSet::new();
 
     // Helper: add a file if not already added
-    let mut add_once = |compiler: &mut galex::compiler::Compiler,
-                        path: &std::path::Path,
-                        added: &mut std::collections::HashSet<std::path::PathBuf>| {
-        let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-        if added.insert(canonical) {
-            if let Err(e) = compiler.add_file(path) {
-                eprintln!("  error reading {}: {e}", path.display());
-                process::exit(1);
+    let mut add_once =
+        |compiler: &mut galex::compiler::Compiler,
+         path: &std::path::Path,
+         added: &mut std::collections::HashSet<std::path::PathBuf>| {
+            let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+            if added.insert(canonical) {
+                if let Err(e) = compiler.add_file(path) {
+                    eprintln!("  error reading {}: {e}", path.display());
+                    process::exit(1);
+                }
             }
-        }
-    };
+        };
 
     for route in &routes {
         add_once(&mut compiler, &route.page_file, &mut added_files);
@@ -251,7 +255,10 @@ fn cmd_build(
     eprintln!("  No type errors");
 
     // ── Step 4: Code generation ────────────────────────────────
-    eprintln!("[4/{total_steps}] Generating project in {}...", output_dir.display());
+    eprintln!(
+        "[4/{total_steps}] Generating project in {}...",
+        output_dir.display()
+    );
     compiler.set_routes(routes);
     // Compute the gale crate path relative to the output directory.
     // Count how many directory components deep the output_dir is from CWD,
@@ -262,7 +269,11 @@ fn cmd_build(
         for _ in 0..depth {
             rel.push_str("../");
         }
-        if rel.is_empty() { "./".to_string() } else { rel }
+        if rel.is_empty() {
+            "./".to_string()
+        } else {
+            rel
+        }
     };
     if let Err(e) = compiler.generate(project_name, output_dir, Some(&gale_crate_path)) {
         eprintln!("  error: {e}");
@@ -352,7 +363,10 @@ fn optimize_assets(output_dir: &Path) {
                     let saved = original_len.saturating_sub(minified.len());
                     total_saved += saved;
                     if let Err(e) = std::fs::write(&path, &minified) {
-                        eprintln!("  warning: failed to write minified {}: {e}", path.display());
+                        eprintln!(
+                            "  warning: failed to write minified {}: {e}",
+                            path.display()
+                        );
                     } else {
                         minified_count += 1;
                     }
@@ -487,8 +501,7 @@ fn hash_dir_recursive(
                     .unwrap_or_default()
                     .to_string_lossy()
                     .to_string();
-                let hashed_filename =
-                    galex::codegen::asset_hash::insert_hash(&filename, &hash);
+                let hashed_filename = galex::codegen::asset_hash::insert_hash(&filename, &hash);
 
                 // Logical path relative to public/
                 let logical = path
@@ -675,8 +688,7 @@ fn cmd_serve(dist_dir: &PathBuf, port: Option<u16>) {
     eprintln!("Starting server: {}", binary.display());
 
     let mut cmd = process::Command::new(&binary);
-    cmd.arg("--root")
-        .arg(dist_dir.join("public"));
+    cmd.arg("--root").arg(dist_dir.join("public"));
     if let Some(p) = port {
         cmd.arg("--port").arg(p.to_string());
     }

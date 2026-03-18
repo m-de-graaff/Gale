@@ -69,11 +69,7 @@ pub struct DevServerState {
 /// 2. Serves `/__gale_dev/overlay.js` — the dev client script
 /// 3. Serves `/__gale_dev/overlay.css` — error overlay styles
 /// 4. Proxies everything else to `localhost:{backend_port}`
-pub async fn run_dev_server(
-    port: u16,
-    backend_port: u16,
-    tx: broadcast::Sender<DevMessage>,
-) {
+pub async fn run_dev_server(port: u16, backend_port: u16, tx: broadcast::Sender<DevMessage>) {
     let state = DevServerState { tx, backend_port };
 
     let app = Router::new()
@@ -132,10 +128,7 @@ async fn overlay_css() -> impl IntoResponse {
 ///
 /// Uses a simple TCP-level approach: connect to backend, send the request,
 /// read the response. Injects the dev client script into HTML responses.
-async fn proxy_handler(
-    State(state): State<DevServerState>,
-    req: Request<Body>,
-) -> Response<Body> {
+async fn proxy_handler(State(state): State<DevServerState>, req: Request<Body>) -> Response<Body> {
     use axum::http::uri::Uri;
 
     // Build the backend URI
@@ -149,21 +142,17 @@ async fn proxy_handler(
         .unwrap();
 
     // Connect to backend via TCP and send the request using hyper
-    let stream = match tokio::net::TcpStream::connect(format!(
-        "127.0.0.1:{}",
-        state.backend_port
-    ))
-    .await
-    {
-        Ok(s) => s,
-        Err(_) => {
-            return Response::builder()
-                .status(StatusCode::BAD_GATEWAY)
-                .header("content-type", "text/html; charset=utf-8")
-                .body(Body::from(backend_down_html()))
-                .unwrap();
-        }
-    };
+    let stream =
+        match tokio::net::TcpStream::connect(format!("127.0.0.1:{}", state.backend_port)).await {
+            Ok(s) => s,
+            Err(_) => {
+                return Response::builder()
+                    .status(StatusCode::BAD_GATEWAY)
+                    .header("content-type", "text/html; charset=utf-8")
+                    .body(Body::from(backend_down_html()))
+                    .unwrap();
+            }
+        };
 
     // Use hyper's client connection
     let io = hyper_util::rt::TokioIo::new(stream);
@@ -224,8 +213,7 @@ async fn proxy_handler(
 
 /// Inject the dev client script tag before `</body>`.
 fn inject_dev_script(html: &str) -> String {
-    const SCRIPT_TAG: &str =
-        r#"<link rel="stylesheet" href="/__gale_dev/overlay.css"><script src="/__gale_dev/overlay.js"></script>"#;
+    const SCRIPT_TAG: &str = r#"<link rel="stylesheet" href="/__gale_dev/overlay.css"><script src="/__gale_dev/overlay.js"></script>"#;
 
     if let Some(pos) = html.rfind("</body>") {
         let mut result = String::with_capacity(html.len() + SCRIPT_TAG.len());

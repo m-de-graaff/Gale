@@ -14,9 +14,11 @@ WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
 # Stub manifests for workspace members not needed in this image,
 # so Cargo can parse the workspace without their full source trees.
-RUN mkdir -p galex gale-registry benches && \
+RUN mkdir -p galex/src gale-registry/src benches && \
     printf '[package]\nname = "galex"\nversion = "0.1.0"\nedition = "2021"\n' > galex/Cargo.toml && \
     printf '[package]\nname = "gale-registry"\nversion = "0.1.0"\nedition = "2021"\n' > gale-registry/Cargo.toml && \
+    touch galex/src/main.rs && \
+    touch gale-registry/src/main.rs && \
     touch benches/throughput.rs
 COPY src/ src/
 

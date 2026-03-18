@@ -23,10 +23,7 @@ use server::DevMessage;
 /// Run the full dev server pipeline.
 ///
 /// This is the main entry point for `gale dev`. It blocks until Ctrl+C.
-pub async fn run_dev_server(
-    app_dir: &Path,
-    port: u16,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run_dev_server(app_dir: &Path, port: u16) -> Result<(), Box<dyn std::error::Error>> {
     let project_dir = app_dir.parent().unwrap_or(Path::new("."));
     let output_dir = project_dir.join(".gale_dev");
     let backend_port = find_available_port(port + 1);
@@ -128,19 +125,13 @@ fn print_ready(port: u16, routes: &[DiscoveredRoute], duration: std::time::Durat
     eprintln!();
     eprintln!("  Ready in {:.0?}", duration);
     eprintln!();
-    eprintln!(
-        "  Local:   http://localhost:{port}"
-    );
+    eprintln!("  Local:   http://localhost:{port}");
     eprintln!();
 
     if !routes.is_empty() {
         eprintln!("  Routes:");
         for route in routes {
-            eprintln!(
-                "    {:20} {}",
-                route.url_path,
-                route.page_file.display()
-            );
+            eprintln!("    {:20} {}", route.url_path, route.page_file.display());
         }
         eprintln!();
     }

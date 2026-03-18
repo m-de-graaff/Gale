@@ -32,10 +32,7 @@ pub enum ResolveError {
     /// A package was not found in the registry.
     NotFound(String),
     /// No version matches the constraint.
-    NoMatchingVersion {
-        package: String,
-        constraint: String,
-    },
+    NoMatchingVersion { package: String, constraint: String },
     /// Version conflict — two packages need incompatible versions.
     Conflict {
         package: String,
@@ -49,10 +46,19 @@ impl std::fmt::Display for ResolveError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ResolveError::NotFound(name) => write!(f, "package not found: {name}"),
-            ResolveError::NoMatchingVersion { package, constraint } => {
-                write!(f, "no version of '{package}' matches constraint '{constraint}'")
+            ResolveError::NoMatchingVersion {
+                package,
+                constraint,
+            } => {
+                write!(
+                    f,
+                    "no version of '{package}' matches constraint '{constraint}'"
+                )
             }
-            ResolveError::Conflict { package, required_by } => {
+            ResolveError::Conflict {
+                package,
+                required_by,
+            } => {
                 write!(
                     f,
                     "version conflict for '{package}', required by: {}",
@@ -101,11 +107,12 @@ pub async fn resolve_deps(
         // Check lockfile first
         let locked_name = name.replace('/', "-");
         if let Some(locked) = lockfile.resolve(&locked_name) {
-            let locked_ver = semver::Version::parse(&locked.version)
-                .map_err(|_| ResolveError::NoMatchingVersion {
+            let locked_ver = semver::Version::parse(&locked.version).map_err(|_| {
+                ResolveError::NoMatchingVersion {
                     package: name.clone(),
                     constraint: constraint_str.clone(),
-                })?;
+                }
+            })?;
             let req = parse_constraint(&constraint_str)?;
             if req.matches(&locked_ver) {
                 // Use locked version
@@ -131,12 +138,11 @@ pub async fn resolve_deps(
             }
         })?;
 
-        let version = semver::Version::parse(&meta.version).map_err(|_| {
-            ResolveError::NoMatchingVersion {
+        let version =
+            semver::Version::parse(&meta.version).map_err(|_| ResolveError::NoMatchingVersion {
                 package: name.clone(),
                 constraint: constraint_str.clone(),
-            }
-        })?;
+            })?;
 
         let req = parse_constraint(&constraint_str)?;
         if !req.matches(&version) {
