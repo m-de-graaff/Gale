@@ -133,14 +133,35 @@ if ($currentPath -notcontains $InstallDir) {
     Write-Info "$InstallDir is already on your PATH."
 }
 
+# ── VS Code extension (auto-install if `code` is on PATH) ─────────────────────
+$Version = $Tag -replace "^v", ""
+$VsixName = "gale-vscode-$Version.vsix"
+$VsixUrl  = "$ReleasesBase/download/$Tag/$VsixName"
+
+if (Get-Command code -ErrorAction SilentlyContinue) {
+    Write-Host ""
+    Write-Info "VS Code detected — installing Gale extension..."
+    $VsixTmp = Join-Path $env:TEMP $VsixName
+    try {
+        Invoke-WebRequest -Uri $VsixUrl -OutFile $VsixTmp -UseBasicParsing
+        & code --install-extension $VsixTmp --force | Out-Null
+        Remove-Item $VsixTmp -ErrorAction SilentlyContinue
+        Write-Success "VS Code extension installed."
+    } catch {
+        Write-Warn "Could not install VS Code extension automatically."
+        Write-Info "Run manually after install:  gale editor install vscode"
+    }
+} else {
+    Write-Info "VS Code not detected. To install the extension later:"
+    Write-Info "  gale editor install vscode"
+}
+
 # ── Done ──────────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Success "Gale SDK installed!"
 Write-Host ""
 Write-Info "  gale --version"
 Write-Info "  gale new my-app; cd my-app; gale dev"
-Write-Host ""
-Write-Host "Editor setup: https://get-gale.vercel.app/editors/vscode  |  https://get-gale.vercel.app/editors/zed" -ForegroundColor DarkGray
 Write-Host ""
 
 function Invoke-FallbackToCargo {

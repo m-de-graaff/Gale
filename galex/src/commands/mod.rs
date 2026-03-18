@@ -2,6 +2,7 @@
 
 pub mod add;
 pub mod check;
+pub mod editor;
 pub mod fmt;
 pub mod lint_cmd;
 pub mod login;

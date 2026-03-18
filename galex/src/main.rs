@@ -116,6 +116,20 @@ enum Command {
     Login,
     /// Download and install the latest version of gale
     SelfUpdate,
+    /// Install or manage editor extensions
+    Editor {
+        #[command(subcommand)]
+        command: EditorCommand,
+    },
+}
+
+#[derive(Subcommand)]
+enum EditorCommand {
+    /// Download and install an editor extension
+    Install {
+        /// Editor to install extension for: vscode, zed
+        editor: String,
+    },
 }
 
 fn main() {
@@ -153,6 +167,11 @@ fn main() {
         Command::Publish => galex::commands::publish::run(),
         Command::Login => galex::commands::login::run(),
         Command::SelfUpdate => galex::commands::self_update::run(),
+        Command::Editor { command } => match command {
+            EditorCommand::Install { editor } => {
+                galex::commands::editor::run_install(&editor)
+            }
+        },
     };
     process::exit(exit_code);
 }
