@@ -3,6 +3,9 @@
 **/target/
 **/gale_build/
 
+# Local cargo config (linker settings vary per machine)
+.cargo/config.toml
+
 # Editor/IDE
 *.swp
 *.swo
