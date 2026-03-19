@@ -97,7 +97,7 @@ impl Default for ProjectFiles {
 /// the generated handler code.
 /// `needs_regex` controls whether the `regex` crate is included (only
 /// when guards use regex-based validators like email, url, uuid, or custom regex).
-pub fn generate_cargo_toml(project_name: &str, needs_regex: bool, gale_crate_path: &str) -> String {
+pub fn generate_cargo_toml(project_name: &str, needs_regex: bool, gale_dep: &str) -> String {
     let mut e = RustEmitter::new();
     // Cargo.toml is not Rust code, but the emitter works fine for any
     // indented text format. We use write/writeln directly.
@@ -111,7 +111,7 @@ pub fn generate_cargo_toml(project_name: &str, needs_regex: bool, gale_crate_pat
     e.writeln("[workspace]");
     e.newline();
     e.writeln("[dependencies]");
-    e.writeln(&format!("gale = {{ path = \"{gale_crate_path}\" }}"));
+    e.writeln(&format!("gale = {gale_dep}"));
     e.writeln("axum = { version = \"0.8\", features = [\"ws\"] }");
     e.writeln("tokio = { version = \"1\", features = [\"full\"] }");
     e.writeln("serde = { version = \"1\", features = [\"derive\"] }");
@@ -637,9 +637,11 @@ pub fn scaffold(project_name: &str) -> ProjectFiles {
     let mut files = ProjectFiles::new();
 
     // Cargo.toml
+    // scaffold() is only used in tests; real builds go through CodegenContext
+    // which resolves the dep at runtime via resolve_gale_dep().
     files.add_file(
         "Cargo.toml",
-        generate_cargo_toml(project_name, false, "../"),
+        generate_cargo_toml(project_name, false, "\"0.0.0\""),
     );
 
     // src/main.rs — start with all modules disabled; they'll be enabled
@@ -661,32 +663,43 @@ mod tests {
 
     #[test]
     fn cargo_toml_has_package_name() {
-        let toml = generate_cargo_toml("my_app", false, "../");
+        let toml = generate_cargo_toml("my_app", false, "\"0.0.0\"");
         assert!(toml.contains("name = \"my_app\""));
     }
 
     #[test]
-    fn cargo_toml_has_gale_dep() {
-        let toml = generate_cargo_toml("test", false, "../");
-        assert!(toml.contains("gale = { path = \"../\" }"));
+    fn cargo_toml_has_gale_dep_path() {
+        let toml = generate_cargo_toml("test", false, "{ path = \"/usr/local/lib/gale\" }");
+        assert!(toml.contains("gale = { path = \"/usr/local/lib/gale\" }"));
+    }
+
+    #[test]
+    fn cargo_toml_has_gale_dep_git() {
+        let toml = generate_cargo_toml(
+            "test",
+            false,
+            "{ git = \"https://github.com/m-de-graaff/Gale\", tag = \"v0.1.4\" }",
+        );
+        assert!(toml.contains("gale = { git ="));
+        assert!(toml.contains("tag = \"v0.1.4\""));
     }
 
     #[test]
     fn cargo_toml_has_axum_dep() {
-        let toml = generate_cargo_toml("test", false, "../");
+        let toml = generate_cargo_toml("test", false, "\"0.0.0\"");
         assert!(toml.contains("axum = { version = \"0.8\", features = [\"ws\"] }"));
     }
 
     #[test]
     fn cargo_toml_has_serde_dep() {
-        let toml = generate_cargo_toml("test", false, "../");
+        let toml = generate_cargo_toml("test", false, "\"0.0.0\"");
         assert!(toml.contains("serde = "));
         assert!(toml.contains("serde_json = "));
     }
 
     #[test]
     fn cargo_toml_has_release_profile() {
-        let toml = generate_cargo_toml("test", false, "../");
+        let toml = generate_cargo_toml("test", false, "\"0.0.0\"");
         assert!(toml.contains("[profile.release]"));
         assert!(toml.contains("lto = true"));
     }
@@ -778,7 +791,7 @@ mod tests {
 
     #[test]
     fn cargo_toml_has_ws_feature() {
-        let toml = generate_cargo_toml("test", false, "../");
+        let toml = generate_cargo_toml("test", false, "\"0.0.0\"");
         assert!(toml.contains("features = [\"ws\"]"));
     }
 

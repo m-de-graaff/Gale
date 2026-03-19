@@ -86,8 +86,13 @@ pub struct CodegenContext<'a> {
     pub files: ProjectFiles,
     /// Project name (used in Cargo.toml and the binary name).
     pub project_name: String,
-    /// Path to the `gale` crate for the generated Cargo.toml dependency.
-    pub gale_crate_path: String,
+    /// Full TOML value for the `gale` dependency in the generated Cargo.toml.
+    ///
+    /// Examples:
+    ///   `{ git = "https://github.com/m-de-graaff/Gale", tag = "v0.1.4" }`
+    ///   `{ path = "/home/user/.gale/lib" }`
+    ///   `"0.1.4"`
+    pub gale_dep: String,
     /// Tracks which top-level module directories have content.
     modules: MainModules,
     /// Names of generated action modules (for the actions/mod.rs).
@@ -154,7 +159,7 @@ impl<'a> CodegenContext<'a> {
             interner,
             files: ProjectFiles::new(),
             project_name: project_name.to_string(),
-            gale_crate_path: "../".to_string(),
+            gale_dep: resolve_gale_dep(),
             modules: MainModules::default(),
             action_modules: Vec::new(),
             guard_modules: Vec::new(),
@@ -540,11 +545,7 @@ impl<'a> CodegenContext<'a> {
         // Cargo.toml
         self.files.add_file(
             "Cargo.toml",
-            project::generate_cargo_toml(
-                &self.project_name,
-                self.needs_regex,
-                &self.gale_crate_path,
-            ),
+            project::generate_cargo_toml(&self.project_name, self.needs_regex, &self.gale_dep),
         );
 
         // src/main.rs — now with actual route registrations
@@ -731,14 +732,51 @@ pub fn generate(
     interner: &TypeInterner,
     project_name: &str,
     output_dir: &Path,
-    gale_crate_path: Option<&str>,
+    gale_dep_override: Option<&str>,
 ) -> std::io::Result<()> {
     let mut ctx = CodegenContext::new(interner, project_name);
-    if let Some(path) = gale_crate_path {
-        ctx.gale_crate_path = path.to_string();
+    if let Some(dep) = gale_dep_override {
+        ctx.gale_dep = dep.to_string();
     }
     ctx.emit_program(program);
     ctx.write(output_dir)
+}
+
+// ── Gale dependency resolution ─────────────────────────────────────────
+
+/// Determine the correct `gale` dependency value for the generated Cargo.toml.
+///
+/// Resolution order:
+/// 1. `GALE_LIB_PATH` env var — use as a path dependency (dev / monorepo).
+/// 2. Adjacent `lib/` directory next to the running binary — bundled source.
+/// 3. Git dependency pinned to the current release tag (default for installs).
+fn resolve_gale_dep() -> String {
+    // 1. Developer override: explicit source path.
+    if let Ok(path) = std::env::var("GALE_LIB_PATH") {
+        let escaped = path.replace('\\', "/");
+        return format!("{{ path = \"{escaped}\" }}");
+    }
+
+    // 2. Bundled source shipped alongside the binary (e.g. in SDK archive).
+    //    Layout: <install>/bin/gale[.exe]  →  <install>/lib/Cargo.toml
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(bin_dir) = exe.parent() {
+            if let Some(install_dir) = bin_dir.parent() {
+                let lib_path = install_dir.join("lib");
+                if lib_path.join("Cargo.toml").exists() {
+                    let escaped = lib_path.to_string_lossy().replace('\\', "/");
+                    return format!("{{ path = \"{escaped}\" }}");
+                }
+            }
+        }
+    }
+
+    // 3. Fall back to git dependency pinned to the current release tag.
+    //    Cargo caches the clone in ~/.cargo/git/ after the first build.
+    format!(
+        "{{ git = \"https://github.com/m-de-graaff/Gale\", tag = \"v{}\" }}",
+        env!("CARGO_PKG_VERSION")
+    )
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────
