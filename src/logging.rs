@@ -179,6 +179,7 @@ fn is_static_asset(path: &str) -> bool {
         || path.starts_with("/public/")
         || path.starts_with("/static/")
         || path.starts_with("/favicon")
+        || path.starts_with("/.well-known/")
     {
         return true;
     }

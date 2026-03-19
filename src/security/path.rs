@@ -28,11 +28,15 @@ pub async fn path_security_middleware(
     let raw_path = request.uri().path();
 
     validate_path(raw_path, &state).map_err(|status| {
-        tracing::warn!(
-            status = status.as_u16(),
-            path = raw_path,
-            "request rejected by path security"
-        );
+        // Suppress noisy warnings for well-known browser probes
+        // (Chrome DevTools, service worker manifests, etc.)
+        if !raw_path.starts_with("/.well-known/") {
+            tracing::warn!(
+                status = status.as_u16(),
+                path = raw_path,
+                "request rejected by path security"
+            );
+        }
         ErrorResponse::new(status)
     })?;
 

@@ -1,6 +1,6 @@
 //! `gale new` — interactive project scaffolding.
 
-use super::scaffold::{AuthChoice, DbChoice, ScaffoldOptions};
+use super::scaffold::{ScaffoldOptions, TemplateChoice};
 
 /// Run the `gale new` command with interactive prompts.
 pub fn run(name: Option<String>) -> i32 {
@@ -12,43 +12,24 @@ pub fn run(name: Option<String>) -> i32 {
             .unwrap_or_else(|_| "my-gale-app".into())
     });
 
+    let template_options = &["Default (Recommended)", "E-commerce", "Chat App"];
+    let template_idx = dialoguer::Select::new()
+        .with_prompt("Template")
+        .items(template_options)
+        .default(0)
+        .interact()
+        .unwrap_or(0);
+    let template = match template_idx {
+        1 => TemplateChoice::Ecommerce,
+        2 => TemplateChoice::ChatApp,
+        _ => TemplateChoice::Default,
+    };
+
     let include_tailwind = dialoguer::Confirm::new()
         .with_prompt("Include Tailwind CSS?")
         .default(true)
         .interact()
         .unwrap_or(true);
-
-    let include_example = dialoguer::Confirm::new()
-        .with_prompt("Include example pages?")
-        .default(true)
-        .interact()
-        .unwrap_or(true);
-
-    let db_options = &["None", "PostgreSQL", "SQLite"];
-    let db_idx = dialoguer::Select::new()
-        .with_prompt("Database adapter")
-        .items(db_options)
-        .default(0)
-        .interact()
-        .unwrap_or(0);
-    let db = match db_idx {
-        1 => DbChoice::Postgres,
-        2 => DbChoice::Sqlite,
-        _ => DbChoice::None,
-    };
-
-    let auth_options = &["None", "Session-based", "JWT"];
-    let auth_idx = dialoguer::Select::new()
-        .with_prompt("Authentication")
-        .items(auth_options)
-        .default(0)
-        .interact()
-        .unwrap_or(0);
-    let auth = match auth_idx {
-        1 => AuthChoice::Session,
-        2 => AuthChoice::Jwt,
-        _ => AuthChoice::None,
-    };
 
     eprintln!();
     eprintln!("  Creating project '{project_name}'...");
@@ -56,9 +37,7 @@ pub fn run(name: Option<String>) -> i32 {
     let opts = ScaffoldOptions {
         name: project_name.clone(),
         tailwind: include_tailwind,
-        example: include_example,
-        db,
-        auth,
+        template,
     };
 
     if let Err(e) = super::scaffold::generate_project(&opts) {
@@ -95,7 +74,6 @@ pub fn run(name: Option<String>) -> i32 {
     }
 
     // Pre-build the project so `gale dev` starts fast (seconds not minutes).
-    // This runs the same pipeline: route discovery → parse → codegen → cargo build.
     eprintln!("  Building project...");
     let project_path = std::path::Path::new(&project_name);
     let app_dir = project_path.join("app");

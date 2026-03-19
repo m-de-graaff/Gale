@@ -48,6 +48,8 @@ jobs:
           targets: ${{ matrix.target }}
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "release-${{ matrix.suffix }}"
 
       - name: Install musl tools
         if: matrix.os == 'ubuntu-latest'
@@ -126,6 +128,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
+          shared-key: "editor"
           workspaces: |
             . -> target
             galex/editors/zed -> galex/editors/zed/target

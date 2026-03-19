@@ -70,8 +70,9 @@ pub async fn run_dev_server(app_dir: &Path, port: u16) -> Result<(), Box<dyn std
 
     // ── Start dev proxy server ─────────────────────────────────
     let tx_clone = tx.clone();
+    let reload_flag = manager.pending_reload.clone();
     tokio::spawn(async move {
-        server::run_dev_server(port, backend_port, tx_clone).await;
+        server::run_dev_server(port, backend_port, tx_clone, reload_flag).await;
     });
 
     // ── Start file watcher ─────────────────────────────────────

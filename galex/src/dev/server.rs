@@ -75,7 +75,12 @@ pub struct DevServerState {
 /// 2. Serves `/__gale_dev/overlay.js` — the dev client script
 /// 3. Serves `/__gale_dev/overlay.css` — error overlay styles
 /// 4. Proxies everything else to `localhost:{backend_port}`
-pub async fn run_dev_server(port: u16, backend_port: u16, tx: broadcast::Sender<DevMessage>) {
+pub async fn run_dev_server(
+    port: u16,
+    backend_port: u16,
+    tx: broadcast::Sender<DevMessage>,
+    pending_reload: std::sync::Arc<std::sync::atomic::AtomicBool>,
+) {
     let client = reqwest::Client::builder()
         .no_proxy()
         .build()
@@ -84,7 +89,7 @@ pub async fn run_dev_server(port: u16, backend_port: u16, tx: broadcast::Sender<
         tx,
         backend_port,
         client,
-        pending_reload: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        pending_reload,
     };
 
     let app = Router::new()
