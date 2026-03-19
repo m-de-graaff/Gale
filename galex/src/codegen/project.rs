@@ -198,8 +198,12 @@ pub fn generate_cargo_config_toml() -> String {
         e.newline();
     }
 
-    e.writeln("[target.x86_64-pc-windows-msvc]");
-    e.writeln("rustflags = [\"-C\", \"link-arg=-fuse-ld=lld\"]");
+    // Windows MSVC: no linker override. The MSVC link.exe is used by default.
+    // lld-link.exe ships with the Rust toolchain but isn't reliably on PATH,
+    // and rust-lld.exe uses the wrong LLD flavor (ELF, not COFF) for MSVC targets.
+    // Users who want faster linking can install lld-link and add:
+    //   [target.x86_64-pc-windows-msvc]
+    //   linker = "lld-link"
     e.newline();
     e.writeln("[target.x86_64-unknown-linux-gnu]");
     e.writeln("linker = \"clang\"");
@@ -841,12 +845,16 @@ mod tests {
     }
 
     #[test]
-    fn cargo_config_toml_has_lld() {
+    fn cargo_config_toml_has_fast_linkers() {
         let config = generate_cargo_config_toml();
-        assert!(config.contains("[target.x86_64-pc-windows-msvc]"));
-        assert!(config.contains("link-arg=-fuse-ld=lld"));
+        // Windows: no linker override (MSVC link.exe is default)
+        assert!(!config.contains("[target.x86_64-pc-windows-msvc]"));
+        // Linux: mold via clang
         assert!(config.contains("[target.x86_64-unknown-linux-gnu]"));
+        assert!(config.contains("link-arg=-fuse-ld=mold"));
+        // macOS: lld via rustflags
         assert!(config.contains("[target.aarch64-apple-darwin]"));
+        assert!(config.contains("link-arg=-fuse-ld=lld"));
     }
 
     #[test]

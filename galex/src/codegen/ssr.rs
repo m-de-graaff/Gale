@@ -102,10 +102,10 @@ fn emit_template_node(
 
         TemplateNode::ExprInterp { expr, .. } => {
             let expr_str = expr_to_display_string(expr);
-            // Wrap in a <span data-gale-text="N"> so client hydration can target it
+            // Wrap in a <span data-gx-text="N"> so client hydration can target it
             let text_id = hydration.mark_text_expr();
             e.writeln(&format!(
-                "html.push_str(\"<span data-gale-text=\\\"{text_id}\\\">\");"
+                "html.push_str(\"<span data-gx-text=\\\"{text_id}\\\">\");"
             ));
             e.writeln(&format!(
                 "html.push_str(&crate::gale_ssr::escape_html(&{expr_str}));"
