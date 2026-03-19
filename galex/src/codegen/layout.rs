@@ -52,9 +52,10 @@ pub fn emit_layout_module(layout: &LayoutDecl) -> String {
     );
     e.newline();
 
-    // Also emit the layout's own head function (for layout-level metadata
-    // like charset, base styles, etc.)
-    head::emit_head_fn(&mut e, layout.body.head.as_ref());
+    // Note: we do NOT emit render_head() here. The layout's <head> content
+    // comes from the template literal.  render_head() is only needed in
+    // per-route modules where page-level `head { title: "..." }` blocks
+    // exist.
 
     e.finish()
 }

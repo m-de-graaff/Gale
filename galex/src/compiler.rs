@@ -231,13 +231,73 @@ impl Compiler {
     ) -> Result<(), std::io::Error> {
         let merged = self.merge_programs();
         let interner = TypeInterner::new();
+
+        // Build a component-name → filesystem-URL-path map from the
+        // discovered routes so the codegen uses filesystem paths (e.g.
+        // "/about") instead of deriving from PascalCase names ("/about-page").
+        let route_overrides = self.build_route_overrides();
+
         crate::codegen::generate(
             &merged,
             &interner,
             project_name,
             output_dir,
             gale_crate_path,
+            &route_overrides,
         )
+    }
+
+    /// Build a map from component name to filesystem-derived URL path.
+    ///
+    /// Walks the discovered routes, finds the `ComponentDecl` name in each
+    /// route's parsed page file, and maps it to the route's `url_path`.
+    fn build_route_overrides(&self) -> std::collections::HashMap<String, String> {
+        use crate::ast::Item;
+
+        // Build a reverse map: canonical file_path → file_id
+        let mut path_to_file_id: std::collections::HashMap<PathBuf, u32> =
+            std::collections::HashMap::new();
+        for file_id in self.sources.keys() {
+            if let Some(path) = self.file_table.get_path(*file_id) {
+                let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+                path_to_file_id.insert(canonical, *file_id);
+            }
+        }
+
+        let mut overrides = std::collections::HashMap::new();
+
+        for route in &self.routes {
+            let canonical = route
+                .page_file
+                .canonicalize()
+                .unwrap_or_else(|_| route.page_file.clone());
+            let file_id = match path_to_file_id.get(&canonical) {
+                Some(id) => *id,
+                None => continue,
+            };
+
+            // Find the ComponentDecl in this file's parsed program
+            for (prog_file_id, program) in &self.programs {
+                if *prog_file_id != file_id {
+                    continue;
+                }
+                for item in &program.items {
+                    let comp_name = match item {
+                        Item::ComponentDecl(d) => Some(&d.name),
+                        Item::Out(out) => match out.inner.as_ref() {
+                            Item::ComponentDecl(d) => Some(&d.name),
+                            _ => None,
+                        },
+                        _ => None,
+                    };
+                    if let Some(name) = comp_name {
+                        overrides.insert(name.to_string(), route.url_path.clone());
+                    }
+                }
+            }
+        }
+
+        overrides
     }
 
     /// Set the discovered routes (from filesystem walking).

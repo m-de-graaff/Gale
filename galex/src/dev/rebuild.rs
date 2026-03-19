@@ -429,6 +429,9 @@ impl RebuildManager {
         match Command::new(&binary)
             .env("GALE_PORT", self.backend_port.to_string())
             .env("GALE_BIND", "127.0.0.1")
+            // Suppress the backend's "listening addr=..." INFO log —
+            // the dev proxy already prints the URL on startup.
+            .env("GALE_LOG_LEVEL", "warn")
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
             .spawn()

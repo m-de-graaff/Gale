@@ -65,7 +65,7 @@ pub mod ssr;
 pub mod types;
 pub mod validation;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 use crate::ast::{Item, Program};
@@ -150,6 +150,12 @@ pub struct CodegenContext<'a> {
     has_client_code: bool,
     /// Names of pages that have client scripts (for listing generated page JS files).
     client_page_names: Vec<String>,
+    /// Component name → filesystem-derived URL path overrides.
+    ///
+    /// Populated from `DiscoveredRoute::url_path` so that the codegen uses
+    /// the filesystem route (`/about`) instead of re-deriving from the
+    /// component name (`AboutPage` → `/about-page`).
+    route_path_overrides: HashMap<String, String>,
 }
 
 impl<'a> CodegenContext<'a> {
@@ -188,6 +194,7 @@ impl<'a> CodegenContext<'a> {
             client_action_decls: Vec::new(),
             has_client_code: false,
             client_page_names: Vec::new(),
+            route_path_overrides: HashMap::new(),
         }
     }
 
@@ -418,8 +425,15 @@ impl<'a> CodegenContext<'a> {
                     let mod_name = types::to_module_name(base_name);
                     self.route_modules.push(mod_name.clone());
 
-                    // Record route path for build_router
-                    let route_path = route::component_name_to_path(&decl.name);
+                    // Record route path for build_router.
+                    // Prefer the filesystem-derived path from route discovery;
+                    // fall back to PascalCase → kebab-case conversion for
+                    // components not in the route table.
+                    let route_path = self
+                        .route_path_overrides
+                        .get(decl.name.as_str())
+                        .cloned()
+                        .unwrap_or_else(|| route::component_name_to_path(&decl.name));
                     self.route_paths.push((route_path, mod_name.clone()));
 
                     // Generate real route handler module
@@ -733,11 +747,13 @@ pub fn generate(
     project_name: &str,
     output_dir: &Path,
     gale_dep_override: Option<&str>,
+    route_overrides: &std::collections::HashMap<String, String>,
 ) -> std::io::Result<()> {
     let mut ctx = CodegenContext::new(interner, project_name);
     if let Some(dep) = gale_dep_override {
         ctx.gale_dep = dep.to_string();
     }
+    ctx.route_path_overrides = route_overrides.clone();
     ctx.emit_program(program);
     ctx.write(output_dir)
 }

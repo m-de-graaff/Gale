@@ -71,8 +71,9 @@ impl AssetManifest {
             "static MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(|| {",
         );
         e.indent();
+        let mutability = if self.entries.is_empty() { "" } else { "mut " };
         e.writeln(&format!(
-            "let mut m = HashMap::with_capacity({});",
+            "let {mutability}m = HashMap::with_capacity({});",
             self.entries.len()
         ));
         for (logical, hashed) in &self.entries {

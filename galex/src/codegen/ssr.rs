@@ -77,6 +77,13 @@ fn emit_template_node(
                 emit_template_node(e, child, hydration, slot_param);
             }
 
+            // In a layout context, inject framework head content (CSS links,
+            // import map, page head metadata) before </head>.  The variable
+            // `head_html` is prepared by `emit_layout_module()`.
+            if tag == "head" && slot_param.is_some() {
+                e.writeln("html.push_str(head_html);");
+            }
+
             // Close tag
             e.writeln(&format!("html.push_str(\"</{tag}>\");"));
 
