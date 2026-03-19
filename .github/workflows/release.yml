@@ -47,9 +47,8 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: "release-${{ matrix.suffix }}"
+      # No Rust cache for release builds — ensures clean compilation
+      # from source with no stale artifacts from previous releases.
 
       - name: Install musl tools
         if: matrix.os == 'ubuntu-latest'

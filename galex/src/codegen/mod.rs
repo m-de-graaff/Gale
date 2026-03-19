@@ -679,14 +679,9 @@ impl<'a> CodegenContext<'a> {
                 ),
             );
 
-            // Ensure the consolidated runtime is emitted (may already be
-            // triggered by has_client_code, but actions alone also need it)
-            if !self.has_client_code {
-                self.files.add_file(
-                    "public/_gale/runtime.js",
-                    include_str!("../runtime/gale_runtime.js").to_string(),
-                );
-            }
+            // Actions alone also need the runtime — mark has_client_code
+            // so write() emits it directly (bypassing write_to_disk).
+            self.has_client_code = true;
         }
 
         // ── Built-in transition CSS ────────────────────────────────
@@ -723,12 +718,36 @@ impl<'a> CodegenContext<'a> {
 
     /// Write all generated files to disk.
     pub fn write(&self, output_dir: &Path) -> std::io::Result<()> {
-        self.files.write_to_disk(output_dir)?;
+        // Split files: JS files are written directly (no processing),
+        // everything else goes through write_to_disk (CSS/Rust minification).
+        // This guarantees JS export names are NEVER mangled.
+        let mut js_files = Vec::new();
+        let mut other_files = project::ProjectFiles::new();
 
-        // Write runtime.js directly — bypass ALL file processing.
-        // The runtime is a hand-written ES module whose export names
-        // (_readData, signal, effect, hydrate, _registerSignal, etc.)
-        // MUST be preserved exactly for page script imports to work.
+        for (path, content) in &self.files.files {
+            let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+            if ext == "js" {
+                js_files.push((path.clone(), content.clone()));
+            } else {
+                other_files.add_file(path.clone(), content.clone());
+            }
+        }
+
+        // Write non-JS files through the normal pipeline (CSS/Rust minification)
+        other_files.write_to_disk(output_dir)?;
+
+        // Write JS files directly — no processing whatsoever
+        for (rel_path, content) in &js_files {
+            let full_path = output_dir.join(rel_path);
+            if let Some(parent) = full_path.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::write(&full_path, content)?;
+        }
+
+        // Write runtime.js directly from embedded source — belt and suspenders.
+        // Even if the runtime were somehow in self.files, this overwrites it
+        // with the verbatim hand-written source.
         if self.has_client_code {
             let runtime_dir = output_dir.join("public").join("_gale");
             std::fs::create_dir_all(&runtime_dir)?;

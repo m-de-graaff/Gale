@@ -17,7 +17,7 @@ use super::rust_emitter::RustEmitter;
 /// atomically via [`write_to_disk`].
 pub struct ProjectFiles {
     /// Sorted map from relative path to file content.
-    files: BTreeMap<PathBuf, String>,
+    pub(crate) files: BTreeMap<PathBuf, String>,
 }
 
 impl ProjectFiles {
