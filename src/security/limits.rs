@@ -38,9 +38,13 @@ fn validate_request_limits(
     request: &Request<Body>,
     state: &RequestLimitsState,
 ) -> Result<(), StatusCode> {
-    // Check URI length (cheapest check first)
+    // Check URI length — compute from parts to avoid allocating a String
     if state.max_uri_length > 0 {
-        let uri_len = request.uri().to_string().len();
+        let uri = request.uri();
+        let uri_len = uri.path().len()
+            + uri.query().map_or(0, |q| q.len() + 1)
+            + uri.scheme_str().map_or(0, |s| s.len() + 3) // "://"
+            + uri.authority().map_or(0, |a| a.as_str().len());
         if uri_len > state.max_uri_length {
             return Err(StatusCode::URI_TOO_LONG);
         }
@@ -82,18 +86,20 @@ pub async fn request_limits_middleware(
     request: Request<Body>,
     next: Next,
 ) -> Result<Response, ErrorResponse> {
-    let uri = request.uri().to_string();
-
     validate_request_limits(&request, &state).map_err(|status| {
+        let uri = request.uri().to_string();
         tracing::warn!(status = status.as_u16(), %uri, "request rejected by limits");
         ErrorResponse::new(status)
     })?;
+
+    // Capture path for timeout logging — only used if timeout fires.
+    let uri_path = request.uri().path().to_owned();
 
     match state.request_timeout {
         Some(duration) => tokio::time::timeout(duration, next.run(request))
             .await
             .map_err(|_| {
-                tracing::warn!(status = 408, %uri, "request timed out");
+                tracing::warn!(status = 408, uri = %uri_path, "request timed out");
                 ErrorResponse::new(StatusCode::REQUEST_TIMEOUT)
             }),
         None => Ok(next.run(request).await),

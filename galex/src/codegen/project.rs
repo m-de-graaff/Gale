@@ -133,6 +133,13 @@ pub fn generate_cargo_toml(project_name: &str, needs_regex: bool, gale_dep: &str
         e.writeln("regex = \"1\"");
     }
     e.newline();
+    e.writeln("[profile.dev]");
+    e.writeln("opt-level = 1");
+    e.writeln("debug = 1");
+    e.newline();
+    e.writeln("[profile.dev.package.\"*\"]");
+    e.writeln("opt-level = 2");
+    e.newline();
     e.writeln("[profile.release]");
     e.writeln("lto = true");
     e.writeln("codegen-units = 1");
@@ -420,6 +427,9 @@ pub fn generate_gale_ssr_runtime() -> String {
     e.newline();
 
     e.emit_doc_comment("Escape a string for safe embedding in HTML content.");
+    e.emit_doc_comment("");
+    e.emit_doc_comment("Single-pass: scans the input once and only allocates when");
+    e.emit_doc_comment("a special character is found (zero-alloc for clean strings).");
     e.emit_fn(
         "pub",
         false,
@@ -427,13 +437,19 @@ pub fn generate_gale_ssr_runtime() -> String {
         &[("s", "&str")],
         Some("String"),
         |e| {
-            e.writeln("s.replace('&', \"&amp;\")");
-            e.indent();
-            e.writeln(".replace('<', \"&lt;\")");
-            e.writeln(".replace('>', \"&gt;\")");
-            e.writeln(".replace('\"', \"&quot;\")");
-            e.writeln(".replace('\\'', \"&#39;\")");
-            e.dedent();
+            e.writeln("let bytes = s.as_bytes();");
+            e.writeln("let mut out = String::with_capacity(s.len());");
+            e.block("for &b in bytes", |e| {
+                e.block("match b", |e| {
+                    e.writeln("b'&' => out.push_str(\"&amp;\"),");
+                    e.writeln("b'<' => out.push_str(\"&lt;\"),");
+                    e.writeln("b'>' => out.push_str(\"&gt;\"),");
+                    e.writeln("b'\"' => out.push_str(\"&quot;\"),");
+                    e.writeln("b'\\'' => out.push_str(\"&#39;\"),");
+                    e.writeln("_ => out.push(b as char),");
+                });
+            });
+            e.writeln("out");
         },
     );
 

@@ -1,10 +1,8 @@
 use std::fmt;
 use std::fs::{self, File, OpenOptions};
-use std::net::SocketAddr;
 use std::sync::Mutex;
 use std::time::Instant;
 
-use axum::extract::ConnectInfo;
 use axum::middleware::Next;
 use axum::response::Response;
 use tracing::field::{Field, Visit};
@@ -115,16 +113,24 @@ where
             let method = visitor.method.as_deref().unwrap_or("-");
             let path = visitor.path.as_deref().unwrap_or("/");
             let status = visitor.status.unwrap_or(0);
-            let duration = visitor.duration_ms.unwrap_or(0.0);
+            let duration_us = visitor.duration_us.unwrap_or(0);
 
-            // Format duration: <1ms → "<1ms", otherwise round
-            let dur_str = if duration < 1.0 {
-                "<1ms".to_string()
+            // Format duration with proper unit — zero allocations.
+            //   <1000μs  →  "127μs"
+            //   ≥1000μs  →  "4.2ms"
+            if duration_us < 1000 {
+                writeln!(
+                    writer,
+                    " {method} {path} {status} in {duration_us}\u{00B5}s"
+                )
             } else {
-                format!("{}ms", duration.round() as u64)
-            };
-
-            writeln!(writer, " {method} {path} {status} in {dur_str}")
+                let ms_whole = duration_us / 1000;
+                let ms_frac = (duration_us % 1000) / 100; // one decimal place
+                writeln!(
+                    writer,
+                    " {method} {path} {status} in {ms_whole}.{ms_frac}ms"
+                )
+            }
         } else {
             let level = event.metadata().level();
             let target = event.metadata().target();
@@ -140,7 +146,7 @@ struct RequestVisitor {
     method: Option<String>,
     path: Option<String>,
     status: Option<u16>,
-    duration_ms: Option<f64>,
+    duration_us: Option<u64>,
 }
 
 impl Visit for RequestVisitor {
@@ -154,14 +160,10 @@ impl Visit for RequestVisitor {
     }
 
     fn record_u64(&mut self, field: &Field, value: u64) {
-        if field.name() == "status" {
-            self.status = Some(value as u16);
-        }
-    }
-
-    fn record_f64(&mut self, field: &Field, value: f64) {
-        if field.name() == "duration_ms" {
-            self.duration_ms = Some(value);
+        match field.name() {
+            "status" => self.status = Some(value as u16),
+            "duration_us" => self.duration_us = Some(value),
+            _ => {}
         }
     }
 }
@@ -170,6 +172,7 @@ impl Visit for RequestVisitor {
 ///
 /// These are silenced because they add noise without useful signal
 /// during development — the user cares about page and API routes.
+#[inline]
 fn is_static_asset(path: &str) -> bool {
     if path.starts_with("/_gale/")
         || path.starts_with("/_next/")
@@ -202,14 +205,11 @@ fn is_static_asset(path: &str) -> bool {
     )
 }
 
-pub async fn request_logging_middleware(
-    ConnectInfo(_peer): ConnectInfo<SocketAddr>,
-    req: axum::extract::Request,
-    next: Next,
-) -> Response {
+pub async fn request_logging_middleware(req: axum::extract::Request, next: Next) -> Response {
     let start = Instant::now();
-    let method = req.method().to_string();
-    let path = req.uri().path().to_string();
+    // as_str() returns &'static str for standard methods — zero alloc.
+    let method = req.method().as_str().to_owned();
+    let path = req.uri().path().to_owned();
 
     let response = next.run(req).await;
 
@@ -219,14 +219,14 @@ pub async fn request_logging_middleware(
     }
 
     let status = response.status().as_u16();
-    let duration_ms = start.elapsed().as_secs_f64() * 1000.0;
+    let duration_us = start.elapsed().as_micros() as u64;
 
     tracing::info!(
         target: "gale::request",
         %method,
         %path,
         status,
-        duration_ms,
+        duration_us,
     );
 
     response

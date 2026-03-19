@@ -155,6 +155,12 @@ async fn proxy_handler(
     let mut headers = req.headers().clone();
     // Replace the Host header so the backend sees the correct authority.
     headers.remove("host");
+    // Prevent the backend from compressing the response.  The dev proxy
+    // needs to read and modify HTML (inject overlay.js) — this is
+    // impossible on compressed content.  reqwest is configured without
+    // gzip/br decompression features (default-features = false), so
+    // compressed bytes would pass through raw → garbled output.
+    headers.remove("accept-encoding");
 
     // Collect the incoming body (if any — e.g. POST form data).
     let body_bytes = match axum::body::to_bytes(req.into_body(), 10 * 1024 * 1024).await {

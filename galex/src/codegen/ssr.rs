@@ -267,38 +267,56 @@ fn emit_open_tag(
 
     // Emit merged class attribute (static classes + class: toggles)
     if has_class_sources {
-        e.writeln("{");
-        e.indent();
-        e.writeln("let mut __classes = Vec::new();");
-
-        // Add static class values
-        if let Some(attr) = static_class_attr {
-            match &attr.value {
-                AttrValue::String(value) => {
-                    let escaped = html_escape_static(value);
-                    e.writeln(&format!("__classes.push({escaped:?}.to_string());"));
+        if class_toggles.is_empty() {
+            // Fast path: static-only class — no Vec, no join, no format.
+            // Saves ~4 heap allocations per element.
+            if let Some(attr) = static_class_attr {
+                match &attr.value {
+                    AttrValue::String(value) => {
+                        let escaped = html_escape_static(value);
+                        e.writeln(&format!("html.push_str(\" class=\\\"{escaped}\\\"\");"));
+                    }
+                    AttrValue::Expr(expr) => {
+                        let val = expr_to_display_string(expr);
+                        e.writeln(&format!(
+                            "write!(html, \" class=\\\"{{}}\\\"\", {val}).unwrap();"
+                        ));
+                    }
+                    AttrValue::Bool => {}
                 }
-                AttrValue::Expr(expr) => {
-                    let val = expr_to_display_string(expr);
-                    e.writeln(&format!("__classes.push({val}.to_string());"));
-                }
-                AttrValue::Bool => {} // bare `class` with no value — skip
             }
-        }
+        } else {
+            // Slow path: dynamic class toggles mixed with static classes.
+            // Vec + join is required to merge runtime conditional classes.
+            e.writeln("{");
+            e.indent();
+            e.writeln("let mut __classes = Vec::new();");
 
-        // Add class: toggle values
-        for (name, cond) in &class_toggles {
-            let cond_str = expr_to_rust(cond);
-            e.writeln(&format!(
-                "if {cond_str} {{ __classes.push({name:?}.to_string()); }}"
-            ));
-        }
+            if let Some(attr) = static_class_attr {
+                match &attr.value {
+                    AttrValue::String(value) => {
+                        let escaped = html_escape_static(value);
+                        e.writeln(&format!("__classes.push({escaped:?});"));
+                    }
+                    AttrValue::Expr(expr) => {
+                        let val = expr_to_display_string(expr);
+                        e.writeln(&format!("__classes.push(&{val}.to_string());"));
+                    }
+                    AttrValue::Bool => {}
+                }
+            }
 
-        e.block("if !__classes.is_empty()", |e| {
-            e.writeln("html.push_str(&format!(\" class=\\\"{}\\\"\", __classes.join(\" \")));");
-        });
-        e.dedent();
-        e.writeln("}");
+            for (name, cond) in &class_toggles {
+                let cond_str = expr_to_rust(cond);
+                e.writeln(&format!("if {cond_str} {{ __classes.push({name:?}); }}"));
+            }
+
+            e.block("if !__classes.is_empty()", |e| {
+                e.writeln("write!(html, \" class=\\\"{}\\\"\", __classes.join(\" \")).unwrap();");
+            });
+            e.dedent();
+            e.writeln("}");
+        }
     }
 
     // form: directives — Pass 1: attributes (emitted before closing `>`)

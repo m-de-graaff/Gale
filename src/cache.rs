@@ -56,6 +56,7 @@ impl CacheState {
     }
 }
 
+#[inline]
 pub fn extract_extension(uri_path: &str) -> Option<&str> {
     if uri_path.ends_with('/') {
         return Some("html");
@@ -72,7 +73,20 @@ pub async fn cache_middleware(
     request: Request<Body>,
     next: Next,
 ) -> Response {
-    let uri_path = request.uri().path().to_string();
+    // Extract extension before consuming the request — avoids
+    // cloning the URI path into a String.  Use a stack buffer for
+    // case-insensitive comparison (extensions are max ~5 bytes).
+    let ext_lower = {
+        let path = request.uri().path();
+        extract_extension(path).map(|e| {
+            let mut buf = [0u8; 16];
+            let len = e.len().min(16);
+            buf[..len].copy_from_slice(&e.as_bytes()[..len]);
+            buf[..len].make_ascii_lowercase();
+            let s = std::str::from_utf8(&buf[..len]).unwrap_or("").to_owned();
+            s
+        })
+    };
     let mut response = next.run(request).await;
 
     let status = response.status();
@@ -80,7 +94,7 @@ pub async fn cache_middleware(
         return response;
     }
 
-    let extension = extract_extension(&uri_path).map(|e| e.to_ascii_lowercase());
+    let extension = ext_lower;
     let headers = response.headers_mut();
 
     match extension.as_deref() {

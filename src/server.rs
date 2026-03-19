@@ -62,6 +62,7 @@ pub async fn run(config: Config) {
     let security_state = PathSecurityState {
         canonical_root,
         block_dotfiles: config.block_dotfiles,
+        canonical_cache: std::sync::Arc::new(dashmap::DashMap::new()),
     };
 
     let headers_state = SecurityHeadersState::from_config(&config.security_headers);
@@ -158,6 +159,7 @@ pub async fn run_with_app(config: Config, extra_routes: Router) {
     let security_state = PathSecurityState {
         canonical_root,
         block_dotfiles: config.block_dotfiles,
+        canonical_cache: std::sync::Arc::new(dashmap::DashMap::new()),
     };
 
     let headers_state = SecurityHeadersState::from_config(&config.security_headers);

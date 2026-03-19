@@ -4,6 +4,7 @@ use std::path::Path;
 ///
 /// On all platforms, a file starting with `.` is considered hidden.
 /// On Windows, additionally checks the `FILE_ATTRIBUTE_HIDDEN` flag.
+#[inline]
 pub fn is_hidden(path: &Path) -> bool {
     let name = match path.file_name().and_then(|n| n.to_str()) {
         Some(n) => n,

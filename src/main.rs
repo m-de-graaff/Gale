@@ -2,6 +2,9 @@ use gale_lib::config;
 use gale_lib::logging;
 use gale_lib::server;
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 #[tokio::main]
 async fn main() {
     // Install ring as the default crypto provider for rustls.

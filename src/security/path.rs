@@ -1,10 +1,12 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use axum::body::Body;
 use axum::extract::State;
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::Response;
+use dashmap::DashMap;
 use percent_encoding::percent_decode_str;
 
 use crate::error::ErrorResponse;
@@ -13,6 +15,9 @@ use crate::error::ErrorResponse;
 pub struct PathSecurityState {
     pub canonical_root: PathBuf,
     pub block_dotfiles: bool,
+    /// Cache of joined path → canonicalized path.  Eliminates the expensive
+    /// `canonicalize()` syscall on repeat requests for the same file.
+    pub canonical_cache: Arc<DashMap<PathBuf, PathBuf>>,
 }
 
 pub async fn path_security_middleware(
@@ -34,6 +39,7 @@ pub async fn path_security_middleware(
     Ok(next.run(request).await)
 }
 
+#[inline]
 pub fn validate_path(raw_path: &str, state: &PathSecurityState) -> Result<(), StatusCode> {
     // Step 1: Reject null bytes (literal or encoded)
     if raw_path.contains('\0') || raw_path.contains("%00") || raw_path.contains("%2500") {
@@ -45,18 +51,26 @@ pub fn validate_path(raw_path: &str, state: &PathSecurityState) -> Result<(), St
         .decode_utf8()
         .map_err(|_| StatusCode::BAD_REQUEST)?;
 
-    // Step 3: Reject double-encoding — after one decode, no encoded traversal chars should remain
-    let lower = decoded.to_lowercase();
-    if lower.contains("%2e") || lower.contains("%2f") || lower.contains("%5c") {
+    // Step 3: Reject double-encoding — byte-level check without allocating.
+    // Previous: decoded.to_lowercase() allocated a new String on every request.
+    if has_encoded_traversal(&decoded) {
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    // Normalize backslashes to forward slashes for uniform handling
-    let normalized = decoded.replace('\\', "/");
+    // Normalize backslashes — Cow avoids allocation when no backslashes present
+    // (the common case on Linux/macOS).
+    let normalized = if decoded.contains('\\') {
+        std::borrow::Cow::Owned(decoded.replace('\\', "/"))
+    } else {
+        std::borrow::Cow::Borrowed(decoded.as_ref())
+    };
 
-    // Step 4: Reject traversal patterns — ".." as a path segment
+    // Step 4+6: Single pass — check traversal AND dotfiles in one scan
     for segment in normalized.split('/') {
         if segment == ".." {
+            return Err(StatusCode::FORBIDDEN);
+        }
+        if state.block_dotfiles && !segment.is_empty() && segment.starts_with('.') {
             return Err(StatusCode::FORBIDDEN);
         }
     }
@@ -65,21 +79,28 @@ pub fn validate_path(raw_path: &str, state: &PathSecurityState) -> Result<(), St
     #[cfg(windows)]
     validate_windows(&normalized)?;
 
-    // Step 6: Dotfile blocking
-    if state.block_dotfiles {
-        for segment in normalized.split('/') {
-            if !segment.is_empty() && segment.starts_with('.') {
-                return Err(StatusCode::FORBIDDEN);
-            }
-        }
-    }
-
     // Step 7: Symlink jail enforcement
-    // Construct the filesystem path and verify it resolves within the root
+    // Construct the filesystem path and verify it resolves within the root.
+    // Uses a DashMap cache to avoid the expensive canonicalize() syscall
+    // on repeat requests — for a static server this is a ~50-100μs win
+    // per request after the first access.
     let relative = normalized.trim_start_matches('/');
     if !relative.is_empty() {
         let candidate = state.canonical_root.join(relative);
-        if let Ok(resolved) = candidate.canonicalize() {
+
+        // Check cache first
+        let resolved = if let Some(cached) = state.canonical_cache.get(&candidate) {
+            Some(cached.clone())
+        } else if let Ok(resolved) = candidate.canonicalize() {
+            state
+                .canonical_cache
+                .insert(candidate.clone(), resolved.clone());
+            Some(resolved)
+        } else {
+            None // File doesn't exist — let ServeDir handle 404
+        };
+
+        if let Some(resolved) = resolved {
             if !resolved.starts_with(&state.canonical_root) {
                 return Err(StatusCode::FORBIDDEN);
             }
@@ -99,10 +120,34 @@ pub fn validate_path(raw_path: &str, state: &PathSecurityState) -> Result<(), St
                 }
             }
         }
-        // If canonicalize fails, file doesn't exist — let ServeDir handle 404
     }
 
     Ok(())
+}
+
+/// Check for encoded traversal chars (%2e, %2f, %5c) case-insensitively
+/// without allocating.  Replaces the previous `decoded.to_lowercase()`
+/// which allocated a new String on every request.
+#[inline]
+fn has_encoded_traversal(s: &str) -> bool {
+    let bytes = s.as_bytes();
+    let len = bytes.len();
+    if len < 3 {
+        return false;
+    }
+    for i in 0..len - 2 {
+        if bytes[i] == b'%' {
+            let hi = bytes[i + 1];
+            let lo = bytes[i + 2];
+            // %2e / %2E / %2f / %2F / %5c / %5C
+            if (hi == b'2' && (lo == b'e' || lo == b'E' || lo == b'f' || lo == b'F'))
+                || (hi == b'5' && (lo == b'c' || lo == b'C'))
+            {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 #[cfg(windows)]

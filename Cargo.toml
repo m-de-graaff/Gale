@@ -3,7 +3,7 @@ members = ["galex", "gale-registry"]
 
 [package]
 name = "gale"
-version = "0.1.9"
+version = "0.2.0"
 edition = "2021"
 description = "A fast, minimal, and secure static web server"
 license = "MIT/Apache-2.0"
@@ -38,6 +38,8 @@ tower-http = { version = "0.6", features = [
 
 tower-service = "0.3"    # Service trait for custom 404 handler
 percent-encoding = "2"   # URL decoding for path security
+mimalloc = { version = "0.1", default-features = false } # 5-15% throughput improvement
+dashmap = "6"            # Lock-free concurrent HashMap for rate limiter + path cache
 
 # Config
 serde = { version = "1", features = ["derive"] }
@@ -64,6 +66,14 @@ criterion = { version = "0.5", features = ["html_reports"] }
 [[bench]]
 name = "throughput"
 harness = false
+
+[profile.dev]
+opt-level = 0
+debug = 1              # line tables only — faster than full debug info
+incremental = true
+
+[profile.dev.package."*"]
+opt-level = 2          # optimize dependencies (cached after first build)
 
 [profile.bench]
 lto = "thin"

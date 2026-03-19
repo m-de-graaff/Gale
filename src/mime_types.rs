@@ -1,8 +1,20 @@
 /// Returns the MIME type for a given file extension.
 ///
-/// Text types include `charset=utf-8`. Returns `application/octet-stream` for unknown extensions.
+/// Text types include `charset=utf-8`. Returns `application/octet-stream`
+/// for unknown extensions.
+///
+/// Zero-allocation: uses a small stack buffer for case-insensitive
+/// matching instead of `ext.to_ascii_lowercase()`.
+#[inline]
 pub fn from_extension(ext: &str) -> &'static str {
-    match ext.to_ascii_lowercase().as_str() {
+    // Fast path: lowercase directly into a stack buffer (extensions are short).
+    let mut buf = [0u8; 16];
+    let len = ext.len().min(16);
+    buf[..len].copy_from_slice(&ext.as_bytes()[..len]);
+    buf[..len].make_ascii_lowercase();
+    let lower = std::str::from_utf8(&buf[..len]).unwrap_or("");
+
+    match lower {
         // Web
         "html" | "htm" => "text/html; charset=utf-8",
         "css" => "text/css; charset=utf-8",
