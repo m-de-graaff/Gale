@@ -235,7 +235,7 @@ async fn run_plain(app: Router, addr: SocketAddr, shutdown_timeout: Duration) {
         .await
         .expect("failed to bind to address");
 
-    tracing::info!(%addr, "listening");
+    tracing::debug!(%addr, "listening");
 
     axum::serve(
         listener,
@@ -291,7 +291,7 @@ async fn run_tls(app: Router, addr: SocketAddr, config: &Config) {
         Some(tokio::spawn(async move {
             match TcpListener::bind(redirect_addr).await {
                 Ok(listener) => {
-                    tracing::info!(%redirect_addr, "HTTP redirect listening");
+                    tracing::debug!(%redirect_addr, "HTTP redirect listening");
                     let _ = axum::serve(listener, redirect_app)
                         .with_graceful_shutdown(crate::platform::shutdown_signal())
                         .await;
@@ -309,7 +309,7 @@ async fn run_tls(app: Router, addr: SocketAddr, config: &Config) {
         None
     };
 
-    tracing::info!(%addr, "HTTPS listening");
+    tracing::debug!(%addr, "HTTPS listening");
 
     axum_server::bind_rustls(addr, rustls_config)
         .handle(handle)

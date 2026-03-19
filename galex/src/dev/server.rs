@@ -62,6 +62,10 @@ pub struct DevServerState {
     pub backend_port: u16,
     /// Shared HTTP client for proxying requests (reuses connections).
     pub client: reqwest::Client,
+    /// Flag set when a Reload is sent but may have been missed by
+    /// disconnected clients.  New WebSocket connections check this
+    /// and immediately trigger a reload if set.
+    pub pending_reload: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
 
 /// Start the dev proxy server.
@@ -80,6 +84,7 @@ pub async fn run_dev_server(port: u16, backend_port: u16, tx: broadcast::Sender<
         tx,
         backend_port,
         client,
+        pending_reload: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
     };
 
     let app = Router::new()
@@ -99,12 +104,23 @@ async fn ws_handler(
     ws: WebSocketUpgrade,
     State(state): State<DevServerState>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_ws(socket, state.tx))
+    ws.on_upgrade(move |socket| handle_ws(socket, state.tx, state.pending_reload))
 }
 
-async fn handle_ws(socket: WebSocket, tx: broadcast::Sender<DevMessage>) {
+async fn handle_ws(
+    socket: WebSocket,
+    tx: broadcast::Sender<DevMessage>,
+    pending_reload: std::sync::Arc<std::sync::atomic::AtomicBool>,
+) {
     let mut rx = tx.subscribe();
     let (mut sender, mut _receiver) = socket.split();
+
+    // If a reload was sent while this client was disconnected, deliver
+    // it immediately so the browser picks up the latest build.
+    if pending_reload.swap(false, std::sync::atomic::Ordering::SeqCst) {
+        let json = serde_json::to_string(&DevMessage::Reload).unwrap_or_default();
+        let _ = sender.send(Message::Text(json.into())).await;
+    }
 
     // Forward broadcast messages to the WebSocket client
     while let Ok(msg) = rx.recv().await {

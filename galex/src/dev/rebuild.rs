@@ -28,6 +28,9 @@ pub struct RebuildManager {
     pub project_name: String,
     pub backend_port: u16,
     pub tx: broadcast::Sender<DevMessage>,
+    /// Shared with the dev WebSocket server — set when a Reload message
+    /// may have been missed by disconnected clients.
+    pub pending_reload: std::sync::Arc<std::sync::atomic::AtomicBool>,
     server_process: Option<Child>,
 }
 
@@ -47,6 +50,7 @@ impl RebuildManager {
         project_name: &str,
         backend_port: u16,
         tx: broadcast::Sender<DevMessage>,
+        pending_reload: std::sync::Arc<std::sync::atomic::AtomicBool>,
     ) -> Self {
         Self {
             compiler: Compiler::new(),
@@ -55,6 +59,7 @@ impl RebuildManager {
             project_name: project_name.to_string(),
             backend_port,
             tx,
+            pending_reload,
             server_process: None,
         }
     }
@@ -315,6 +320,10 @@ impl RebuildManager {
             self.start_server();
             self.wait_for_server_ready().await;
             let _ = self.tx.send(DevMessage::ErrorCleared);
+            // Set the pending flag so late-connecting WebSocket clients
+            // (whose connection dropped during the rebuild) still reload.
+            self.pending_reload
+                .store(true, std::sync::atomic::Ordering::SeqCst);
             let _ = self.tx.send(DevMessage::Reload);
         } else if needs_css_only {
             // CSS-only change — regenerate Tailwind, no server restart
@@ -342,6 +351,8 @@ impl RebuildManager {
         self.compiler = Compiler::new();
         self.initial_build().await?;
         let _ = self.tx.send(DevMessage::ErrorCleared);
+        self.pending_reload
+            .store(true, std::sync::atomic::Ordering::SeqCst);
         let _ = self.tx.send(DevMessage::Reload);
         Ok(())
     }
@@ -435,12 +446,20 @@ impl RebuildManager {
             return;
         }
 
+        // Point GALE_ROOT at the generated public/ directory so the
+        // backend's ServeDir finds CSS/JS assets.  Without this, the
+        // backend resolves "./public" from the user's CWD, which is the
+        // project root — not .gale_dev/ where the assets live.
+        let public_root = self.output_dir.join("public");
+
         match Command::new(&binary)
             .env("GALE_PORT", self.backend_port.to_string())
             .env("GALE_BIND", "127.0.0.1")
-            // Suppress the backend's "listening addr=..." INFO log —
-            // the dev proxy already prints the URL on startup.
-            .env("GALE_LOG_LEVEL", "warn")
+            .env("GALE_ROOT", public_root.display().to_string())
+            // Keep request logs (info level) visible while suppressing
+            // the startup "listening addr=..." message (logged at debug
+            // after our change to server.rs).
+            .env("GALE_LOG_LEVEL", "info")
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
             .spawn()

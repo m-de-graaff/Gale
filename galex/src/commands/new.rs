@@ -94,6 +94,21 @@ pub fn run(name: Option<String>) -> i32 {
         }
     }
 
+    // Pre-build the project so `gale dev` starts fast (seconds not minutes).
+    // This runs the same pipeline: route discovery → parse → codegen → cargo build.
+    eprintln!("  Building project...");
+    let project_path = std::path::Path::new(&project_name);
+    let app_dir = project_path.join("app");
+    let output_dir = project_path.join(".gale_dev");
+
+    match prebuild_project(&app_dir, &output_dir, &project_name) {
+        Ok(()) => {}
+        Err(e) => {
+            eprintln!("  warning: pre-build failed: {e}");
+            eprintln!("  The project will be built on first `gale dev` run.");
+        }
+    }
+
     eprintln!("  Project created successfully!");
     eprintln!();
     eprintln!("  Next steps:");
@@ -101,4 +116,67 @@ pub fn run(name: Option<String>) -> i32 {
     eprintln!("    gale dev");
     eprintln!();
     0
+}
+
+/// Run the full build pipeline during `gale new` so `gale dev` starts fast.
+fn prebuild_project(
+    app_dir: &std::path::Path,
+    output_dir: &std::path::Path,
+    project_name: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use crate::compiler::Compiler;
+    use crate::router;
+
+    // Route discovery
+    let routes = router::discovery::discover_routes(app_dir).map_err(|errs| {
+        let msg = errs
+            .iter()
+            .map(|e| e.message.clone())
+            .collect::<Vec<_>>()
+            .join("; ");
+        msg
+    })?;
+
+    // Parse + check
+    let mut compiler = Compiler::new();
+    for route in &routes {
+        let files = std::iter::once(&route.page_file)
+            .chain(route.layouts.iter())
+            .chain(route.guards.iter())
+            .chain(route.middleware.iter());
+        for path in files {
+            let _ = compiler.add_file_dedup(path);
+        }
+    }
+    compiler.parse_all();
+    compiler.check();
+
+    // Codegen
+    compiler.set_routes(routes);
+    compiler.generate(
+        &format!("{project_name}_dev_app"),
+        output_dir,
+        None,
+        true, // dev mode
+    )?;
+
+    // CSS generation (non-fatal)
+    let project_dir = app_dir.parent().unwrap_or(std::path::Path::new("."));
+    if let Err(e) = compiler.generate_css(project_dir, app_dir, output_dir, true) {
+        eprintln!("  warning: CSS generation failed: {e}");
+    }
+
+    // Cargo build
+    let status = std::process::Command::new("cargo")
+        .arg("build")
+        .current_dir(output_dir)
+        .stdout(std::process::Stdio::inherit())
+        .stderr(std::process::Stdio::inherit())
+        .status()?;
+
+    if !status.success() {
+        return Err("cargo build failed".into());
+    }
+
+    Ok(())
 }

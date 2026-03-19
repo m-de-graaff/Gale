@@ -31,6 +31,9 @@ pub async fn run_dev_server(app_dir: &Path, port: u16) -> Result<(), Box<dyn std
     // Broadcast channel for dev messages (browser notifications)
     let (tx, _) = broadcast::channel::<DevMessage>(64);
 
+    // Shared flag for late-connecting WebSocket clients
+    let pending_reload = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+
     // ── Initial build ──────────────────────────────────────────
     eprintln!();
     eprintln!("  Gale dev server");
@@ -42,6 +45,7 @@ pub async fn run_dev_server(app_dir: &Path, port: u16) -> Result<(), Box<dyn std
         "gale_dev_app",
         backend_port,
         tx.clone(),
+        pending_reload,
     );
 
     let start = Instant::now();
