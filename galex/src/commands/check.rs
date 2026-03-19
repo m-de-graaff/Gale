@@ -23,18 +23,18 @@ pub fn run(app_dir: &Path) -> i32 {
         }
     };
 
-    // Step 2: Load and parse all .gx files
+    // Step 2: Load and parse all .gx files (dedup shared layouts/guards)
     let mut compiler = Compiler::new();
     for route in &routes {
-        let _ = compiler.add_file(&route.page_file);
+        let _ = compiler.add_file_dedup(&route.page_file);
         for layout in &route.layouts {
-            let _ = compiler.add_file(layout);
+            let _ = compiler.add_file_dedup(layout);
         }
         for guard in &route.guards {
-            let _ = compiler.add_file(guard);
+            let _ = compiler.add_file_dedup(guard);
         }
         for mw in &route.middleware {
-            let _ = compiler.add_file(mw);
+            let _ = compiler.add_file_dedup(mw);
         }
     }
 

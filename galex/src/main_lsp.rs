@@ -46,7 +46,9 @@ impl LanguageServer for GaleLsp {
                 references_provider: Some(OneOf::Left(true)),
                 rename_provider: Some(OneOf::Left(true)),
                 code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
-                document_formatting_provider: Some(OneOf::Left(true)),
+                // Formatting disabled — the AST-based printer has
+                // correctness issues (drops parens, strips comments).
+                document_formatting_provider: Some(OneOf::Left(false)),
                 document_symbol_provider: Some(OneOf::Left(true)),
                 folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
                 signature_help_provider: Some(SignatureHelpOptions {

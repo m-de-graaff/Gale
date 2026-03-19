@@ -21,12 +21,12 @@ pub fn run(app_dir: &Path, filter: Option<&str>) -> i32 {
 
     let mut compiler = Compiler::new();
     for route in &routes {
-        let _ = compiler.add_file(&route.page_file);
+        let _ = compiler.add_file_dedup(&route.page_file);
         for layout in &route.layouts {
-            let _ = compiler.add_file(layout);
+            let _ = compiler.add_file_dedup(layout);
         }
         for guard in &route.guards {
-            let _ = compiler.add_file(guard);
+            let _ = compiler.add_file_dedup(guard);
         }
     }
 

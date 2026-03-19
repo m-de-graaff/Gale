@@ -21,9 +21,9 @@ pub fn run(app_dir: &Path) -> i32 {
 
     let mut compiler = Compiler::new();
     for route in &routes {
-        let _ = compiler.add_file(&route.page_file);
+        let _ = compiler.add_file_dedup(&route.page_file);
         for layout in &route.layouts {
-            let _ = compiler.add_file(layout);
+            let _ = compiler.add_file_dedup(layout);
         }
     }
 

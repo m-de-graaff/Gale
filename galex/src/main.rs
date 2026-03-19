@@ -217,38 +217,18 @@ fn cmd_build(
     // ── Step 2: Parse .gx files ────────────────────────────────
     eprintln!("[2/{total_steps}] Parsing .gx files...");
     let mut compiler = galex::compiler::Compiler::new();
-    let mut added_files = std::collections::HashSet::new();
 
-    // Helper: add a file if not already added
-    let mut add_once =
-        |compiler: &mut galex::compiler::Compiler,
-         path: &std::path::Path,
-         added: &mut std::collections::HashSet<std::path::PathBuf>| {
-            let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-            if added.insert(canonical) {
-                if let Err(e) = compiler.add_file(path) {
-                    eprintln!("  error reading {}: {e}", path.display());
-                    process::exit(1);
-                }
+    for route in &routes {
+        let files = std::iter::once(&route.page_file)
+            .chain(route.layouts.iter())
+            .chain(route.guards.iter())
+            .chain(route.middleware.iter());
+
+        for path in files {
+            if let Err(e) = compiler.add_file_dedup(path) {
+                eprintln!("  error reading {}: {e}", path.display());
+                process::exit(1);
             }
-        };
-
-    for route in &routes {
-        add_once(&mut compiler, &route.page_file, &mut added_files);
-    }
-    for route in &routes {
-        for layout in &route.layouts {
-            add_once(&mut compiler, layout, &mut added_files);
-        }
-    }
-    for route in &routes {
-        for guard in &route.guards {
-            add_once(&mut compiler, guard, &mut added_files);
-        }
-    }
-    for route in &routes {
-        for mw in &route.middleware {
-            add_once(&mut compiler, mw, &mut added_files);
         }
     }
 

@@ -10,7 +10,7 @@ use std::net::SocketAddr;
 use axum::body::Body;
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::extract::State;
-use axum::http::{Request, Response, StatusCode};
+use axum::http::{Response, StatusCode};
 use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::Router;
@@ -126,38 +126,54 @@ async fn overlay_css() -> impl IntoResponse {
 
 /// Reverse proxy — forward requests to the backend server.
 ///
-/// Uses a simple TCP-level approach: connect to backend, send the request,
-/// read the response. Injects the dev client script into HTML responses.
-async fn proxy_handler(State(state): State<DevServerState>, req: Request<Body>) -> Response<Body> {
-    use axum::http::uri::Uri;
-
-    // Build the backend URI
+/// Uses reqwest to handle connection lifecycle, pooling, and body
+/// collection correctly.  Injects the dev client script into HTML
+/// responses before returning them to the browser.
+async fn proxy_handler(
+    State(state): State<DevServerState>,
+    req: axum::extract::Request,
+) -> Response<Body> {
     let path_and_query = req
         .uri()
         .path_and_query()
-        .map(|pq| pq.as_str())
+        .map(|pq: &axum::http::uri::PathAndQuery| pq.as_str())
         .unwrap_or("/");
-    let backend_uri: Uri = format!("http://127.0.0.1:{}{}", state.backend_port, path_and_query)
-        .parse()
-        .unwrap();
+    let backend_url = format!("http://127.0.0.1:{}{}", state.backend_port, path_and_query);
 
-    // Connect to backend via TCP and send the request using hyper
-    let stream =
-        match tokio::net::TcpStream::connect(format!("127.0.0.1:{}", state.backend_port)).await {
-            Ok(s) => s,
-            Err(_) => {
-                return Response::builder()
-                    .status(StatusCode::BAD_GATEWAY)
-                    .header("content-type", "text/html; charset=utf-8")
-                    .body(Body::from(backend_down_html()))
-                    .unwrap();
-            }
-        };
+    // Extract the incoming request's method and headers.
+    let method = req.method().clone();
+    let mut headers = req.headers().clone();
+    // Replace the Host header so the backend sees the correct authority.
+    headers.remove("host");
 
-    // Use hyper's client connection
-    let io = hyper_util::rt::TokioIo::new(stream);
-    let (mut sender, conn) = match hyper::client::conn::http1::handshake(io).await {
-        Ok(parts) => parts,
+    // Collect the incoming body (if any — e.g. POST form data).
+    let body_bytes = match axum::body::to_bytes(req.into_body(), 10 * 1024 * 1024).await {
+        Ok(b) => b,
+        Err(_) => {
+            return Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .body(Body::from("request body too large"))
+                .unwrap();
+        }
+    };
+
+    // Forward to backend via reqwest.
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .build()
+        .unwrap_or_else(|_| reqwest::Client::new());
+
+    let backend_resp = match client
+        .request(
+            reqwest::Method::from_bytes(method.as_str().as_bytes()).unwrap(),
+            &backend_url,
+        )
+        .headers(convert_headers(&headers))
+        .body(body_bytes.to_vec())
+        .send()
+        .await
+    {
+        Ok(r) => r,
         Err(_) => {
             return Response::builder()
                 .status(StatusCode::BAD_GATEWAY)
@@ -167,56 +183,50 @@ async fn proxy_handler(State(state): State<DevServerState>, req: Request<Body>) 
         }
     };
 
-    // Drive the connection in the background
-    tokio::spawn(async move {
-        let _ = conn.await;
-    });
+    // Reconstruct an axum Response from the reqwest Response.
+    let status = backend_resp.status();
+    let resp_headers = backend_resp.headers().clone();
+    let resp_bytes = backend_resp.bytes().await.unwrap_or_default();
 
-    // Build the proxied request with the backend URI
-    let (mut parts, body) = req.into_parts();
-    parts.uri = backend_uri;
-    let proxy_req = Request::from_parts(parts, body);
-
-    // Send the request
-    let response = match sender.send_request(proxy_req).await {
-        Ok(resp) => resp,
-        Err(_) => {
-            return Response::builder()
-                .status(StatusCode::BAD_GATEWAY)
-                .header("content-type", "text/html; charset=utf-8")
-                .body(Body::from(backend_down_html()))
-                .unwrap();
-        }
-    };
-
-    // Collect the full response body
-    use http_body_util::BodyExt;
-    let (mut parts, incoming) = response.into_parts();
-    let collected = incoming.collect().await.unwrap_or_default();
-    let body_bytes = collected.to_bytes();
-
-    // Remove stale content-length / transfer-encoding — Axum will set
-    // the correct values based on the new body we construct below.
-    // Without this, the browser receives a Content-Length that doesn't
-    // match the actual body (especially after dev script injection),
-    // causing ERR_EMPTY_RESPONSE.
-    parts.headers.remove("content-length");
-    parts.headers.remove("transfer-encoding");
-
-    let is_html = parts
-        .headers
+    let is_html = resp_headers
         .get("content-type")
         .and_then(|v| v.to_str().ok())
         .map(|ct| ct.contains("text/html"))
         .unwrap_or(false);
 
-    if is_html {
-        let html = String::from_utf8_lossy(&body_bytes);
-        let injected = inject_dev_script(&html);
-        Response::from_parts(parts, Body::from(injected))
+    let final_body = if is_html {
+        let html = String::from_utf8_lossy(&resp_bytes);
+        Body::from(inject_dev_script(&html))
     } else {
-        Response::from_parts(parts, Body::from(body_bytes))
+        Body::from(resp_bytes)
+    };
+
+    let mut response = Response::builder().status(status);
+    for (key, value) in resp_headers.iter() {
+        // Skip headers that Axum will set based on the new body.
+        if key == "content-length" || key == "transfer-encoding" {
+            continue;
+        }
+        response = response.header(key, value);
     }
+    response.body(final_body).unwrap()
+}
+
+/// Convert axum `HeaderMap` to reqwest `HeaderMap`.
+///
+/// Both are backed by the `http` crate's types, but reqwest wraps them
+/// in its own re-export.  Since the underlying type is identical we can
+/// iterate and clone cheaply.
+fn convert_headers(headers: &axum::http::HeaderMap) -> reqwest::header::HeaderMap {
+    let mut out = reqwest::header::HeaderMap::with_capacity(headers.len());
+    for (key, value) in headers.iter() {
+        if let Ok(k) = reqwest::header::HeaderName::from_bytes(key.as_str().as_bytes()) {
+            if let Ok(v) = reqwest::header::HeaderValue::from_bytes(value.as_ref()) {
+                out.insert(k, v);
+            }
+        }
+    }
+    out
 }
 
 /// Inject the dev client script tag before `</body>`.

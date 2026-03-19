@@ -3,7 +3,7 @@
 //! Owns the file table, source texts, parsed programs, and orchestrates
 //! lexing → parsing → type checking → code generation.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use crate::ast::Program;
@@ -35,6 +35,8 @@ pub struct Compiler {
     pub raw_parse_errors: Vec<ParseError>,
     /// Discovered routes (populated by `set_routes`).
     pub routes: Vec<DiscoveredRoute>,
+    /// Canonicalized paths already added (for dedup via `add_file_dedup`).
+    added_paths: HashSet<PathBuf>,
 }
 
 impl Compiler {
@@ -48,15 +50,31 @@ impl Compiler {
             lex_errors: Vec::new(),
             raw_parse_errors: Vec::new(),
             routes: Vec::new(),
+            added_paths: HashSet::new(),
         }
     }
 
     /// Add a source file to the compiler. Returns the file ID.
+    ///
+    /// **Note:** This does NOT deduplicate — the same file can be added
+    /// multiple times, resulting in duplicate parse/check work and false
+    /// "already defined" errors.  Prefer [`add_file_dedup`] for route-
+    /// discovery call sites where layouts are shared across routes.
     pub fn add_file(&mut self, path: &Path) -> Result<u32, std::io::Error> {
         let source = std::fs::read_to_string(path)?;
         let file_id = self.file_table.add_file(path.to_path_buf());
         self.sources.insert(file_id, source);
         Ok(file_id)
+    }
+
+    /// Add a source file, skipping it if the same canonical path was
+    /// already added.  Returns `Ok(None)` when the file was skipped.
+    pub fn add_file_dedup(&mut self, path: &Path) -> Result<Option<u32>, std::io::Error> {
+        let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+        if !self.added_paths.insert(canonical) {
+            return Ok(None); // already loaded
+        }
+        self.add_file(path).map(Some)
     }
 
     /// Parse all loaded source files.

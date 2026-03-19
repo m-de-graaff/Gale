@@ -207,6 +207,40 @@ async fn run_async() -> i32 {
         return 1;
     }
 
+    // ── Also replace gale-lsp if present in the archive ────────
+    let lsp_name = if cfg!(windows) {
+        "gale-lsp.exe"
+    } else {
+        "gale-lsp"
+    };
+    let new_lsp = tmp_dir.join(lsp_name);
+    if new_lsp.exists() {
+        if let Some(bin_dir) = current_exe.parent() {
+            let current_lsp = bin_dir.join(lsp_name);
+            if current_lsp.exists() {
+                match replace_binary(&new_lsp, &current_lsp) {
+                    Ok(()) => eprintln!("  Updated gale-lsp"),
+                    Err(e) => eprintln!("  warning: failed to update gale-lsp: {e}"),
+                }
+            } else {
+                // gale-lsp not installed yet — copy it in
+                if let Err(e) = std::fs::copy(&new_lsp, &current_lsp) {
+                    eprintln!("  warning: failed to install gale-lsp: {e}");
+                } else {
+                    #[cfg(unix)]
+                    {
+                        use std::os::unix::fs::PermissionsExt;
+                        let _ = std::fs::set_permissions(
+                            &current_lsp,
+                            std::fs::Permissions::from_mode(0o755),
+                        );
+                    }
+                    eprintln!("  Installed gale-lsp");
+                }
+            }
+        }
+    }
+
     let _ = std::fs::remove_dir_all(&tmp_dir);
     eprintln!("  Updated to v{latest_tag}  —  run `gale --version` to confirm");
     0

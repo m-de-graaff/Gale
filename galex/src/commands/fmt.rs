@@ -7,6 +7,25 @@ use walkdir::WalkDir;
 ///
 /// If `check_only` is true, reports unformatted files and exits 1 without writing.
 pub fn run(app_dir: &Path, check_only: bool) -> i32 {
+    // The formatter is currently disabled due to correctness issues.
+    // It will silently alter program semantics in ways that break code:
+    //   - Parenthesized expressions lose grouping: (a + b) * c  →  a + b * c
+    //   - All comments (// and /* */) are stripped
+    //   - Template text whitespace is trimmed
+    let _ = (app_dir, check_only);
+    eprintln!();
+    eprintln!("  error: gale fmt is temporarily disabled");
+    eprintln!();
+    eprintln!("  The formatter has known issues that silently alter program semantics:");
+    eprintln!("    - Parenthesized expressions lose their grouping");
+    eprintln!("      (a + b) * c  becomes  a + b * c");
+    eprintln!("    - All comments are removed");
+    eprintln!();
+    eprintln!("  This will be fixed in a future release.");
+    eprintln!();
+    return 1;
+
+    #[allow(unreachable_code)]
     let files = find_gx_files(app_dir);
     if files.is_empty() {
         eprintln!("  No .gx files found in {}", app_dir.display());

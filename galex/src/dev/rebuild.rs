@@ -330,14 +330,9 @@ impl RebuildManager {
 
     /// Load all source files referenced by the routes into the compiler.
     ///
-    /// Uses a canonicalized-path HashSet to guard against adding the same file
-    /// more than once.  Without this, a root layout shared by N routes would be
-    /// added N times, causing the type-checker to see its declarations (e.g.
-    /// `out layout Root`) as duplicate definitions (GX0327).
+    /// Deduplication is handled by `Compiler::add_file_dedup` which
+    /// tracks canonicalized paths internally.
     fn load_route_files(&mut self, routes: &[router::DiscoveredRoute]) {
-        let mut added: std::collections::HashSet<std::path::PathBuf> =
-            std::collections::HashSet::new();
-
         for route in routes {
             let files = std::iter::once(&route.page_file)
                 .chain(route.layouts.iter())
@@ -345,10 +340,7 @@ impl RebuildManager {
                 .chain(route.middleware.iter());
 
             for path in files {
-                let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-                if added.insert(canonical) {
-                    let _ = self.compiler.add_file(path);
-                }
+                let _ = self.compiler.add_file_dedup(path);
             }
         }
     }
