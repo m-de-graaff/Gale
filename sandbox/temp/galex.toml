@@ -1,0 +1,9 @@
+# GaleX project configuration
+# Documentation: https://get-gale.vercel.app/docs/config
+
+[project]
+name = "temp"
+
+[tailwind]
+enabled = true
+input_css = "styles/global.css"

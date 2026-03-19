@@ -29,8 +29,10 @@ pub fn emit_route_module(decl: &ComponentDecl) -> String {
     e.emit_use("axum::response::Html");
     e.newline();
 
-    // Detect server data bindings (let statements in component body)
+    // Detect server data bindings (let/mut/frozen — passed as params)
     let server_bindings = collect_server_bindings(&decl.body.stmts);
+    // Signal bindings (emitted as locals inside render_body)
+    let signal_bindings = collect_signal_bindings(&decl.body.stmts);
     let path_params = extract_path_params(&decl.name);
 
     // --- Handler function ---
@@ -43,7 +45,7 @@ pub fn emit_route_module(decl: &ComponentDecl) -> String {
     head::emit_head_fn(&mut e, decl.body.head.as_ref());
 
     // --- Body renderer ---
-    emit_body_fn(&mut e, decl, &server_bindings);
+    emit_body_fn(&mut e, decl, &server_bindings, &signal_bindings);
 
     e.finish()
 }
@@ -147,14 +149,24 @@ fn collect_server_bindings(stmts: &[Stmt]) -> Vec<(String, Option<String>)> {
                 let init_expr = expr_to_rust(init);
                 bindings.push((rust_name, Some(init_expr)));
             }
-            // Signals are client-side reactive state, but SSR needs their
-            // initial value so template expressions like {count} can render.
-            Stmt::Signal { name, init, .. } => {
-                let rust_name = to_snake_case(name);
-                let init_expr = expr_to_rust(init);
-                bindings.push((rust_name, Some(init_expr)));
-            }
-            _ => {} // Skip derives, refs, effects, etc.
+            // Signals are NOT server bindings — they have concrete Rust
+            // types (i64, f64, etc.) and should be emitted as locals
+            // inside render_body(), not passed as &serde_json::Value params.
+            _ => {}
+        }
+    }
+    bindings
+}
+
+/// Collect signal declarations — emitted as local variables inside
+/// `render_body()` with their initial values so SSR can reference them.
+fn collect_signal_bindings(stmts: &[Stmt]) -> Vec<(String, String)> {
+    let mut bindings = Vec::new();
+    for stmt in stmts {
+        if let Stmt::Signal { name, init, .. } = stmt {
+            let rust_name = to_snake_case(name);
+            let init_expr = expr_to_rust(init);
+            bindings.push((rust_name, init_expr));
         }
     }
     bindings
@@ -292,8 +304,10 @@ fn emit_body_fn(
     e: &mut RustEmitter,
     decl: &ComponentDecl,
     server_bindings: &[(String, Option<String>)],
+    signal_bindings: &[(String, String)],
 ) {
-    // Build parameter list from server bindings
+    // Build parameter list from server bindings (NOT signals —
+    // signals are emitted as local variables with concrete Rust types)
     let param_strs: Vec<(String, String)> = server_bindings
         .iter()
         .map(|(name, _)| (name.clone(), "&serde_json::Value".to_string()))
@@ -304,6 +318,12 @@ fn emit_body_fn(
         .collect();
 
     e.emit_fn("", false, "render_body", &params, Some("String"), |e| {
+        // Emit signal initial values as local variables so SSR
+        // template expressions like {count} can reference them.
+        for (name, init) in signal_bindings {
+            e.writeln(&format!("let {name} = {init};"));
+        }
+
         e.writeln("let mut html = String::with_capacity(2048);");
 
         let mut hydration = HydrationCtx::new();
