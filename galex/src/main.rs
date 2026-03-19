@@ -353,13 +353,19 @@ fn cmd_build(
 fn optimize_assets(output_dir: &Path) {
     use galex::codegen::minify;
 
-    // Read all JS files from the output public/_gale/ directory and minify them
+    // Read all JS files from the output public/_gale/ directory and minify them.
+    // Skip runtime.js — its export names must be preserved verbatim because
+    // page scripts import from it by name (e.g. `import { signal } from '/_gale/runtime.js'`).
+    // The production minifier renames identifiers, which breaks these ES module imports.
     let gale_dir = output_dir.join("public/_gale");
     if gale_dir.is_dir() {
         let mut minified_count = 0u32;
         let mut total_saved = 0usize;
         if let Ok(entries) = walk_js_files(&gale_dir) {
             for path in entries {
+                if path.file_name().is_some_and(|n| n == "runtime.js") {
+                    continue;
+                }
                 if let Ok(source) = std::fs::read_to_string(&path) {
                     let original_len = source.len();
                     let minified = minify::minify_js_production(&source);

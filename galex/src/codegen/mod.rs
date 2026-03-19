@@ -559,8 +559,17 @@ impl<'a> CodegenContext<'a> {
         // Cargo.toml
         self.files.add_file(
             "Cargo.toml",
-            project::generate_cargo_toml(&self.project_name, self.needs_regex, &self.gale_dep),
+            project::generate_cargo_toml(
+                &self.project_name,
+                self.needs_regex,
+                self.modules.has_channels,
+                &self.gale_dep,
+            ),
         );
+
+        // .cargo/config.toml — fast linker (lld/mold) + optional sccache
+        self.files
+            .add_file(".cargo/config.toml", project::generate_cargo_config_toml());
 
         // src/main.rs — now with actual route registrations
         self.files.add_file(

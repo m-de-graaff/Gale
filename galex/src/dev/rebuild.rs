@@ -456,6 +456,12 @@ impl RebuildManager {
             .env("GALE_PORT", self.backend_port.to_string())
             .env("GALE_BIND", "127.0.0.1")
             .env("GALE_ROOT", public_root.display().to_string())
+            // Disable compression on the dev backend.  The dev proxy
+            // (port 3000) forwards responses via reqwest which does NOT
+            // have decompression support (default-features = false).
+            // If the backend compresses, the proxy passes through raw
+            // brotli/gzip bytes → garbled CSS/JS in the browser.
+            .env("GALE_COMPRESSION_ENABLED", "false")
             // Keep request logs (info level) visible while suppressing
             // the startup "listening addr=..." message (logged at debug
             // after our change to server.rs).

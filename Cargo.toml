@@ -3,7 +3,7 @@ members = ["galex", "gale-registry"]
 
 [package]
 name = "gale"
-version = "0.2.6"
+version = "0.2.7"
 edition = "2021"
 description = "A fast, minimal, and secure static web server"
 license = "MIT/Apache-2.0"
@@ -20,25 +20,26 @@ name = "gale"
 path = "src/main.rs"
 
 [features]
-default = ["tls"]
+default = ["tls", "compression", "mimalloc"]
 tls = ["dep:axum-server", "dep:rustls", "dep:rustls-pemfile", "dep:rustls-acme", "dep:futures-util"]
+compression = ["tower-http/compression-br", "tower-http/compression-gzip"]
+mimalloc = ["dep:mimalloc"]
 
 [dependencies]
 # Core
 axum = "0.8"
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "io-util", "fs", "time"] }
 tower-http = { version = "0.6", features = [
     "fs",            # ServeDir for static files
-    "compression-br", # Brotli (Phase 3)
-    "compression-gzip", # Gzip (Phase 3)
     "set-header",    # Security headers (Phase 2)
     "trace",         # Request tracing (Phase 5)
     "cors",          # CORS middleware (Phase 5)
+    # compression-br and compression-gzip are gated behind the "compression" feature
 ] }
 
 tower-service = "0.3"    # Service trait for custom 404 handler
 percent-encoding = "2"   # URL decoding for path security
-mimalloc = { version = "0.1", default-features = false } # 5-15% throughput improvement
+mimalloc = { version = "0.1", default-features = false, optional = true } # 5-15% throughput improvement
 dashmap = "6"            # Lock-free concurrent HashMap for rate limiter + path cache
 
 # Config

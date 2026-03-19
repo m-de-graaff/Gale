@@ -89,6 +89,23 @@ pub fn run(name: Option<String>) -> i32 {
 
     eprintln!("  Project created successfully!");
     eprintln!();
+
+    // Windows Defender exclusion hint — real-time scanning of build artifacts
+    // adds 30-60s to a full build. Show this once so users can opt in.
+    #[cfg(windows)]
+    {
+        let output_abs = std::path::Path::new(&project_name)
+            .join(".gale_dev")
+            .canonicalize()
+            .ok();
+        if let Some(dev_dir) = output_abs {
+            let dev_path = dev_dir.display();
+            eprintln!("  Tip: Exclude build directories from Windows Defender for faster builds:");
+            eprintln!("    powershell -Command \"Add-MpPreference -ExclusionPath '{dev_path}'\"");
+            eprintln!();
+        }
+    }
+
     eprintln!("  Next steps:");
     eprintln!("    cd {project_name}");
     eprintln!("    gale dev");

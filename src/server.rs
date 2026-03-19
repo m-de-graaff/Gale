@@ -68,9 +68,16 @@ pub async fn run(config: Config) {
     let headers_state = SecurityHeadersState::from_config(&config.security_headers);
     let limits_state = RequestLimitsState::from_config(&config.limits);
 
+    #[cfg(feature = "compression")]
     let compression_layer = crate::compression::build_layer(&config.compression);
 
-    let cache_state = crate::cache::CacheState::new(&config.cache, config.compression.enabled);
+    let compression_enabled = {
+        #[cfg(feature = "compression")]
+        { config.compression.enabled }
+        #[cfg(not(feature = "compression"))]
+        { false }
+    };
+    let cache_state = crate::cache::CacheState::new(&config.cache, compression_enabled);
 
     let rate_limit_state = crate::rate_limit::RateLimitState::new(&config.rate_limit);
     crate::rate_limit::spawn_cleanup_task(&rate_limit_state);
@@ -83,8 +90,10 @@ pub async fn run(config: Config) {
         .layer(middleware::from_fn_with_state(
             cache_state,
             crate::cache::cache_middleware,
-        ))
-        .layer(compression_layer)
+        ));
+    #[cfg(feature = "compression")]
+    let static_app = static_app.layer(compression_layer);
+    let static_app = static_app
         .layer(middleware::from_fn_with_state(
             security_state,
             path_security_middleware,
@@ -165,9 +174,16 @@ pub async fn run_with_app(config: Config, extra_routes: Router) {
     let headers_state = SecurityHeadersState::from_config(&config.security_headers);
     let limits_state = RequestLimitsState::from_config(&config.limits);
 
+    #[cfg(feature = "compression")]
     let compression_layer = crate::compression::build_layer(&config.compression);
 
-    let cache_state = crate::cache::CacheState::new(&config.cache, config.compression.enabled);
+    let compression_enabled = {
+        #[cfg(feature = "compression")]
+        { config.compression.enabled }
+        #[cfg(not(feature = "compression"))]
+        { false }
+    };
+    let cache_state = crate::cache::CacheState::new(&config.cache, compression_enabled);
 
     let rate_limit_state = crate::rate_limit::RateLimitState::new(&config.rate_limit);
     crate::rate_limit::spawn_cleanup_task(&rate_limit_state);
@@ -178,8 +194,10 @@ pub async fn run_with_app(config: Config, extra_routes: Router) {
         .layer(middleware::from_fn_with_state(
             cache_state,
             crate::cache::cache_middleware,
-        ))
-        .layer(compression_layer)
+        ));
+    #[cfg(feature = "compression")]
+    let inner_app = inner_app.layer(compression_layer);
+    let inner_app = inner_app
         .layer(middleware::from_fn_with_state(
             security_state,
             path_security_middleware,

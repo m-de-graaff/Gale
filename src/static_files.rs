@@ -9,8 +9,10 @@ use crate::error::NotFoundService;
 pub fn create_static_router(config: &Config) -> Router {
     let not_found = NotFoundService::from_config(&config.error_page_404);
 
+    #[cfg_attr(not(feature = "compression"), allow(unused_mut))]
     let mut serve_dir = ServeDir::new(&config.root);
 
+    #[cfg(feature = "compression")]
     if config.compression.pre_compressed {
         if config.compression.algorithms.iter().any(|a| a == "br") {
             serve_dir = serve_dir.precompressed_br();

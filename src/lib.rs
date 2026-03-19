@@ -1,4 +1,5 @@
 pub mod cache;
+#[cfg(feature = "compression")]
 pub mod compression;
 pub mod config;
 pub mod error;

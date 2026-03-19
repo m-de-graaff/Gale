@@ -216,8 +216,16 @@ fn generated_project_compiles() {
     let interner = TypeInterner::new();
 
     // Generate the full project
-    codegen::generate(&program, &interner, "compile_test_app", &output_dir, None)
-        .expect("codegen::generate failed");
+    codegen::generate(
+        &program,
+        &interner,
+        "compile_test_app",
+        &output_dir,
+        None,
+        &std::collections::HashMap::new(),
+        true,
+    )
+    .expect("codegen::generate failed");
 
     // Fix the `gale` dependency path to point to the real workspace
     let cargo_toml_path = output_dir.join("Cargo.toml");
@@ -261,8 +269,16 @@ fn generated_project_files_exist() {
     let program = build_kitchen_sink_program();
     let interner = TypeInterner::new();
 
-    codegen::generate(&program, &interner, "file_check_app", &output_dir, None)
-        .expect("codegen::generate failed");
+    codegen::generate(
+        &program,
+        &interner,
+        "file_check_app",
+        &output_dir,
+        None,
+        &std::collections::HashMap::new(),
+        true,
+    )
+    .expect("codegen::generate failed");
 
     // Verify expected files exist
     let expected_files = [
