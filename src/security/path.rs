@@ -217,6 +217,7 @@ mod tests {
         PathSecurityState {
             canonical_root: root,
             block_dotfiles: block,
+            canonical_cache: std::sync::Arc::new(DashMap::new()),
         }
     }
 

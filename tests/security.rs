@@ -58,6 +58,7 @@ fn build_test_app() -> Router {
     let security_state = PathSecurityState {
         canonical_root,
         block_dotfiles: true,
+        canonical_cache: std::sync::Arc::new(dashmap::DashMap::new()),
     };
     let headers_state = SecurityHeadersState::from_config(&config.security_headers);
     let limits_state = RequestLimitsState::from_config(&config.limits);
