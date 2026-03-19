@@ -29,9 +29,9 @@ client {
   <input bind:value={email} type="email" />
   <textarea bind:value={message} />
   <button type="submit">Send</button>
-  <when result != "">
+  when result != "" {
     <p>{result}</p>
-  </when>
+  }
 </form>`,
   },
   {

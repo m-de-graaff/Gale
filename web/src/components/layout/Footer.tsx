@@ -6,10 +6,10 @@ const FOOTER_SECTIONS = [
     title: 'Docs',
     links: [
       { label: 'Getting Started', href: '/docs/getting-started' },
-      { label: 'Language Reference', href: '/docs/reference' },
-      { label: 'API Reference', href: '/docs/api' },
-      { label: 'CLI Reference', href: '/docs/cli' },
-      { label: 'Config', href: '/docs/config' },
+      { label: 'Guards', href: '/docs/reference/guards' },
+      { label: 'Boundaries', href: '/docs/reference/boundaries' },
+      { label: 'Templates', href: '/docs/reference/templates' },
+      { label: 'CLI', href: '/docs/cli/project' },
     ],
   },
   {

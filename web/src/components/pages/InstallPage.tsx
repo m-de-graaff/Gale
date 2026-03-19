@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 import { Download, Terminal, Shield, ArrowRight } from 'lucide-react'
 import { CodeBlock } from '@/components/ui/CodeBlock'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Tabs } from '@/components/ui/Tabs'
 
 const INSTALL_TABS = [
@@ -69,28 +71,34 @@ export function InstallPage() {
         <Tabs tabs={INSTALL_TABS} className="mb-12" />
 
         {/* What you get */}
-        <div className="grid sm:grid-cols-3 gap-4 mb-12">
-          <div className="p-4 rounded-lg border border-border/40 bg-card/40">
-            <Terminal className="w-4 h-4 text-accent mb-2" />
-            <h3 className="text-[13px] font-semibold mb-1">gale CLI</h3>
-            <p className="text-[12px] text-muted-foreground/70">
-              new, dev, build, check, lint, serve, add, remove, update, search, publish, login, self-update, editor
-            </p>
-          </div>
-          <div className="p-4 rounded-lg border border-border/40 bg-card/40">
-            <Shield className="w-4 h-4 text-accent mb-2" />
-            <h3 className="text-[13px] font-semibold mb-1">gale-lsp</h3>
-            <p className="text-[12px] text-muted-foreground/70">
-              Diagnostics, hover, go-to-definition, references, rename, code actions, symbols, folding
-            </p>
-          </div>
-          <div className="p-4 rounded-lg border border-border/40 bg-card/40">
-            <Download className="w-4 h-4 text-accent mb-2" />
-            <h3 className="text-[13px] font-semibold mb-1">User-local install</h3>
-            <p className="text-[12px] text-muted-foreground/70">
-              No admin or root required. Installs to your user directory and patches your shell profile for PATH.
-            </p>
-          </div>
+        <div className="grid sm:grid-cols-3 gap-3 mb-12">
+          <Card>
+            <CardContent className="pt-5">
+              <Terminal className="w-4 h-4 text-accent mb-2" />
+              <h3 className="text-[13px] font-semibold mb-1">gale CLI</h3>
+              <p className="text-[12px] text-muted-foreground/70">
+                new, dev, build, check, lint, serve, add, remove, update, search, publish, login, self-update, editor
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-5">
+              <Shield className="w-4 h-4 text-accent mb-2" />
+              <h3 className="text-[13px] font-semibold mb-1">gale-lsp</h3>
+              <p className="text-[12px] text-muted-foreground/70">
+                Diagnostics, hover, go-to-definition, references, rename, code actions, symbols, folding
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-5">
+              <Download className="w-4 h-4 text-accent mb-2" />
+              <h3 className="text-[13px] font-semibold mb-1">User-local install</h3>
+              <p className="text-[12px] text-muted-foreground/70">
+                No admin or root required. Installs to your user directory and patches your shell profile.
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Manual downloads */}
@@ -141,17 +149,11 @@ export function InstallPage() {
 
         {/* Next steps */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <Link
-            to="/docs/getting-started"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-accent-foreground text-[13px] font-semibold hover:bg-accent/90 transition-colors"
-          >
-            Get Started <ArrowRight className="w-3.5 h-3.5" />
+          <Link to="/docs/getting-started">
+            <Button variant="accent">Get Started <ArrowRight className="w-3.5 h-3.5" /></Button>
           </Link>
-          <Link
-            to="/editors/vscode"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border/60 text-[13px] font-medium hover:bg-muted/50 transition-colors"
-          >
-            Set up your editor
+          <Link to="/editors/vscode">
+            <Button variant="outline">Set up your editor</Button>
           </Link>
         </div>
       </div>
