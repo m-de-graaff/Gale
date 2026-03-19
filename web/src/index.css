@@ -1,51 +1,45 @@
 @import "tailwindcss";
 
-/* ── shadcn / Vercel design tokens (dark) ────────────────────────────── */
+/* ── Gale design tokens (dark) ───────────────────────────────────────── */
 :root {
-  --background:         0 0% 3.9%;
-  --foreground:         0 0% 98%;
-  --card:               0 0% 5%;
-  --card-foreground:    0 0% 98%;
-  --popover:            0 0% 5%;
-  --popover-foreground: 0 0% 98%;
-  --primary:            0 0% 98%;
-  --primary-foreground: 0 0% 9%;
-  --secondary:          0 0% 14.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted:              0 0% 14.9%;
-  --muted-foreground:   0 0% 63.9%;
-  --accent:             0 0% 14.9%;
-  --accent-foreground:  0 0% 98%;
-  --destructive:        0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border:             0 0% 14.9%;
-  --input:              0 0% 14.9%;
-  --ring:               0 0% 83.1%;
-  --radius:             0.375rem;
-  /* Vercel signature blue */
-  --blue:               222 89% 55%;
+  --background:         220 14% 4%;
+  --foreground:         210 20% 95%;
+  --card:               220 13% 6%;
+  --card-foreground:    210 20% 95%;
+  --muted:              220 12% 12%;
+  --muted-foreground:   215 10% 55%;
+  --border:             220 12% 14%;
+  --input:              220 12% 14%;
+  --ring:               162 72% 46%;
+  --radius:             0.5rem;
+  --accent:             162 72% 46%;
+  --accent-foreground:  220 14% 4%;
+  --destructive:        0 72% 51%;
+  --warning:            38 92% 50%;
 }
 
 /* ── Tailwind v4 token bridge ────────────────────────────────────────── */
 @theme inline {
-  --color-background:          hsl(var(--background));
-  --color-foreground:          hsl(var(--foreground));
-  --color-card:                hsl(var(--card));
-  --color-card-foreground:     hsl(var(--card-foreground));
-  --color-muted:               hsl(var(--muted));
-  --color-muted-foreground:    hsl(var(--muted-foreground));
-  --color-border:              hsl(var(--border));
-  --color-primary:             hsl(var(--primary));
-  --color-primary-foreground:  hsl(var(--primary-foreground));
-  --color-ring:                hsl(var(--ring));
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --color-background:         hsl(var(--background));
+  --color-foreground:         hsl(var(--foreground));
+  --color-card:               hsl(var(--card));
+  --color-card-foreground:    hsl(var(--card-foreground));
+  --color-muted:              hsl(var(--muted));
+  --color-muted-foreground:   hsl(var(--muted-foreground));
+  --color-border:             hsl(var(--border));
+  --color-accent:             hsl(var(--accent));
+  --color-accent-foreground:  hsl(var(--accent-foreground));
+  --color-ring:               hsl(var(--ring));
+  --color-destructive:        hsl(var(--destructive));
+  --color-warning:            hsl(var(--warning));
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) + 2px);
+  --radius-lg: calc(var(--radius) + 4px);
 }
 
-/* ── Base ────────────────────────────────────────────────────────────── */
+/* ── Base resets ─────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; font-size: 14px; }
 
@@ -54,7 +48,7 @@ body {
   min-height: 100vh;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -62,9 +56,77 @@ body {
 
 #root { min-height: 100vh; display: flex; flex-direction: column; }
 a { color: inherit; text-decoration: none; }
-button { cursor: pointer; border: none; background: none; font: inherit; }
-h1,h2,h3,h4,h5,h6 { margin: 0; line-height: 1.1; font-weight: 600; letter-spacing: -0.025em; }
+button { cursor: pointer; border: none; background: none; font: inherit; color: inherit; }
+h1,h2,h3,h4,h5,h6 { margin: 0; line-height: 1.15; font-weight: 600; letter-spacing: -0.025em; }
 p { margin: 0; }
 code, pre { font-family: 'JetBrains Mono', 'Cascadia Code', monospace; }
 ul, ol { margin: 0; padding: 0; list-style: none; }
 img { display: block; max-width: 100%; }
+
+/* ── Markdown prose styling ──────────────────────────────────────────── */
+.prose { max-width: 72ch; line-height: 1.75; }
+.prose h1 { font-size: 2rem; margin-top: 2.5rem; margin-bottom: 1rem; }
+.prose h2 { font-size: 1.5rem; margin-top: 2.25rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid hsl(var(--border)); }
+.prose h3 { font-size: 1.2rem; margin-top: 1.75rem; margin-bottom: 0.5rem; }
+.prose p { margin-top: 0.75rem; margin-bottom: 0.75rem; color: hsl(var(--muted-foreground)); }
+.prose strong { color: hsl(var(--foreground)); font-weight: 600; }
+.prose a { color: hsl(var(--accent)); text-decoration: underline; text-underline-offset: 2px; }
+.prose a:hover { opacity: 0.8; }
+.prose ul, .prose ol { margin-top: 0.5rem; margin-bottom: 0.5rem; padding-left: 1.5rem; }
+.prose ul { list-style-type: disc; }
+.prose ol { list-style-type: decimal; }
+.prose li { margin-top: 0.25rem; margin-bottom: 0.25rem; color: hsl(var(--muted-foreground)); }
+.prose li strong { color: hsl(var(--foreground)); }
+.prose blockquote {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid hsl(var(--accent));
+  background: hsl(var(--muted));
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.prose blockquote p { color: hsl(var(--muted-foreground)); }
+.prose code {
+  background: hsl(var(--muted));
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: hsl(var(--accent));
+}
+.prose pre {
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
+  background: hsl(220 14% 5.5%);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+.prose pre code {
+  background: none;
+  padding: 0;
+  color: hsl(var(--foreground));
+  font-size: inherit;
+}
+.prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+.prose thead th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  font-weight: 500;
+}
+.prose tbody td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
+  color: hsl(var(--muted-foreground));
+}
+.prose tbody tr:last-child td { border-bottom: none; }
+.prose hr { border: none; border-top: 1px solid hsl(var(--border)); margin: 2rem 0; }
+.prose img { border-radius: var(--radius); margin: 1rem 0; }
+
+/* ── Scrollbar ───────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
