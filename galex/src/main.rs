@@ -275,7 +275,7 @@ fn cmd_build(
             rel
         }
     };
-    if let Err(e) = compiler.generate(project_name, output_dir, Some(&gale_crate_path)) {
+    if let Err(e) = compiler.generate(project_name, output_dir, Some(&gale_crate_path), false) {
         eprintln!("  error: {e}");
         process::exit(1);
     }

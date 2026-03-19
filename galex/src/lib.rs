@@ -29,6 +29,7 @@ pub mod fmt;
 pub mod lexer;
 pub mod lint;
 pub mod lsp;
+pub mod minify;
 pub mod parser;
 pub mod registry;
 pub mod router;

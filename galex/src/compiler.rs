@@ -221,13 +221,14 @@ impl Compiler {
     /// Run code generation on the merged program.
     ///
     /// Writes the generated Rust + JS project to `output_dir`.
-    /// `gale_crate_path` overrides the `gale = { path = "..." }` dependency
-    /// in the generated Cargo.toml (default: `"../"`).
+    /// `gale_dep_override` overrides the gale dependency in the generated
+    /// Cargo.toml. `dev_mode` disables TLS features for faster dev builds.
     pub fn generate(
         &self,
         project_name: &str,
         output_dir: &Path,
-        gale_crate_path: Option<&str>,
+        gale_dep_override: Option<&str>,
+        dev_mode: bool,
     ) -> Result<(), std::io::Error> {
         let merged = self.merge_programs();
         let interner = TypeInterner::new();
@@ -242,8 +243,9 @@ impl Compiler {
             &interner,
             project_name,
             output_dir,
-            gale_crate_path,
+            gale_dep_override,
             &route_overrides,
+            dev_mode,
         )
     }
 

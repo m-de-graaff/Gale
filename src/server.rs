@@ -128,11 +128,12 @@ pub async fn run(config: Config) {
 
     let shutdown_timeout = Duration::from_secs(config.shutdown_timeout_secs);
 
+    #[cfg(feature = "tls")]
     if config.tls.enabled {
         run_tls(app, addr, &config).await;
-    } else {
-        run_plain(app, addr, shutdown_timeout).await;
+        return;
     }
+    run_plain(app, addr, shutdown_timeout).await;
 }
 
 /// Run the server with additional application routes.
@@ -219,11 +220,12 @@ pub async fn run_with_app(config: Config, extra_routes: Router) {
 
     let shutdown_timeout = Duration::from_secs(config.shutdown_timeout_secs);
 
+    #[cfg(feature = "tls")]
     if config.tls.enabled {
         run_tls(app, addr, &config).await;
-    } else {
-        run_plain(app, addr, shutdown_timeout).await;
+        return;
     }
+    run_plain(app, addr, shutdown_timeout).await;
 }
 
 async fn run_plain(app: Router, addr: SocketAddr, shutdown_timeout: Duration) {
@@ -253,6 +255,7 @@ async fn run_plain(app: Router, addr: SocketAddr, shutdown_timeout: Duration) {
     .expect("server error");
 }
 
+#[cfg(feature = "tls")]
 async fn run_tls(app: Router, addr: SocketAddr, config: &Config) {
     crate::tls::validate_tls_config(&config.tls);
 

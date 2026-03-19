@@ -100,7 +100,7 @@ impl RebuildManager {
         // Step 4: Code generation
         self.compiler.set_routes(routes.clone());
         self.compiler
-            .generate(&self.project_name, &self.output_dir, None)
+            .generate(&self.project_name, &self.output_dir, None, true)
             .map_err(|e| {
                 vec![DevError {
                     file: String::new(),
@@ -266,7 +266,7 @@ impl RebuildManager {
             // Codegen
             if let Err(e) = self
                 .compiler
-                .generate(&self.project_name, &self.output_dir, None)
+                .generate(&self.project_name, &self.output_dir, None, true)
             {
                 let errors = vec![DevError {
                     file: String::new(),
@@ -286,6 +286,15 @@ impl RebuildManager {
                     changed_files,
                     errors,
                 };
+            }
+
+            // CSS generation
+            let project_dir = self.app_dir.parent().unwrap_or(Path::new("."));
+            if let Err(e) =
+                self.compiler
+                    .generate_css(project_dir, &self.app_dir, &self.output_dir, true)
+            {
+                eprintln!("  warning: CSS generation failed: {e}");
             }
 
             // Cargo build (incremental, async)

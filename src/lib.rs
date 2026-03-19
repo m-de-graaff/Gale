@@ -9,4 +9,5 @@ pub mod rate_limit;
 pub mod security;
 pub mod server;
 pub mod static_files;
+#[cfg(feature = "tls")]
 pub mod tls;

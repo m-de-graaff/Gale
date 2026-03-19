@@ -6,6 +6,7 @@ use gale_lib::server;
 async fn main() {
     // Install ring as the default crypto provider for rustls.
     // Must happen before any TLS config creation (axum-server, rustls-acme).
+    #[cfg(feature = "tls")]
     rustls::crypto::ring::default_provider()
         .install_default()
         .expect("failed to install rustls crypto provider");

@@ -3,7 +3,7 @@ members = ["galex", "gale-registry"]
 
 [package]
 name = "gale"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2021"
 description = "A fast, minimal, and secure static web server"
 license = "MIT/Apache-2.0"
@@ -18,6 +18,10 @@ path = "src/lib.rs"
 [[bin]]
 name = "gale"
 path = "src/main.rs"
+
+[features]
+default = ["tls"]
+tls = ["dep:axum-server", "dep:rustls", "dep:rustls-pemfile", "dep:rustls-acme", "dep:futures-util"]
 
 [dependencies]
 # Core
@@ -43,14 +47,14 @@ toml = "0.8"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
-# TLS
-axum-server = { version = "0.7", features = ["tls-rustls"] }
-rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
-rustls-pemfile = "2"
+# TLS (optional — disabled for dev builds to cut ~60s of compile time)
+axum-server = { version = "0.7", features = ["tls-rustls"], optional = true }
+rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"], optional = true }
+rustls-pemfile = { version = "2", optional = true }
 
-# ACME (Let's Encrypt)
-rustls-acme = { version = "0.15", default-features = false, features = ["ring", "tokio", "webpki-roots"] }
-futures-util = "0.3"
+# ACME (Let's Encrypt) — also behind the tls feature
+rustls-acme = { version = "0.15", default-features = false, features = ["ring", "tokio", "webpki-roots"], optional = true }
+futures-util = { version = "0.3", optional = true }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

@@ -209,8 +209,11 @@ async fn proxy_handler(
 
     let mut response = Response::builder().status(status);
     for (key, value) in resp_headers.iter() {
-        // Skip headers that Axum will set based on the new body.
-        if key == "content-length" || key == "transfer-encoding" {
+        // Skip hop-by-hop and encoding headers — reqwest auto-decompresses
+        // gzip/br responses but leaves the original Content-Encoding header.
+        // Forwarding it would make the browser try to decompress already-
+        // decompressed bytes, producing garbage (blank page).
+        if key == "content-length" || key == "transfer-encoding" || key == "content-encoding" {
             continue;
         }
         response = response.header(key, value);

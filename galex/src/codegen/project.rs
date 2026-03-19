@@ -76,7 +76,17 @@ impl ProjectFiles {
             if let Some(parent) = full_path.parent() {
                 std::fs::create_dir_all(parent)?;
             }
-            std::fs::write(&full_path, content)?;
+
+            // Apply minification based on file extension.
+            let ext = rel_path.extension().and_then(|e| e.to_str()).unwrap_or("");
+            let minified = match ext {
+                "js" => crate::minify::js::minify_js(content),
+                "css" => crate::minify::css::minify_css(content),
+                "rs" => crate::minify::rust::minify_rs(content),
+                _ => content.clone(),
+            };
+
+            std::fs::write(&full_path, minified)?;
         }
         Ok(())
     }

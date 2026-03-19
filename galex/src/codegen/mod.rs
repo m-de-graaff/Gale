@@ -693,14 +693,14 @@ impl<'a> CodegenContext<'a> {
         }
 
         // ── Built-in transition CSS ────────────────────────────────
-        // Always emit transitions CSS if there are interactive components
-        // (the CSS is small and cacheable; selective emission can be added later)
-        if self.has_client_code {
-            self.files.add_file(
-                "public/_gale/transitions.css",
-                emit_transitions_css::emit_transitions_css(),
-            );
-        }
+        // Always emit — the layout unconditionally references this file.
+        // When there are no interactive components the content is still
+        // valid CSS (transition keyframes), and it avoids a 404 → MIME
+        // type error in the browser.
+        self.files.add_file(
+            "public/_gale/transitions.css",
+            emit_transitions_css::emit_transitions_css(),
+        );
 
         // ── Client-side router ─────────────────────────────────────
         // Emit the router if there are multiple routes (SPA navigation)
@@ -748,8 +748,12 @@ pub fn generate(
     output_dir: &Path,
     gale_dep_override: Option<&str>,
     route_overrides: &std::collections::HashMap<String, String>,
+    dev_mode: bool,
 ) -> std::io::Result<()> {
     let mut ctx = CodegenContext::new(interner, project_name);
+    if dev_mode {
+        ctx.gale_dep = resolve_gale_dep_dev();
+    }
     if let Some(dep) = gale_dep_override {
         ctx.gale_dep = dep.to_string();
     }
@@ -766,11 +770,28 @@ pub fn generate(
 /// 1. `GALE_LIB_PATH` env var — use as a path dependency (dev / monorepo).
 /// 2. Adjacent `lib/` directory next to the running binary — bundled source.
 /// 3. Git dependency pinned to the current release tag (default for installs).
+///
+/// When `dev_mode` is true, appends `default-features = false` to skip the
+/// TLS/ACME/crypto dependency chain (saves ~60s of compile time).
 fn resolve_gale_dep() -> String {
+    resolve_gale_dep_inner(false)
+}
+
+fn resolve_gale_dep_dev() -> String {
+    resolve_gale_dep_inner(true)
+}
+
+fn resolve_gale_dep_inner(dev_mode: bool) -> String {
+    let no_tls = if dev_mode {
+        ", default-features = false"
+    } else {
+        ""
+    };
+
     // 1. Developer override: explicit source path.
     if let Ok(path) = std::env::var("GALE_LIB_PATH") {
         let escaped = path.replace('\\', "/");
-        return format!("{{ path = \"{escaped}\" }}");
+        return format!("{{ path = \"{escaped}\"{no_tls} }}");
     }
 
     // 2. Bundled source shipped alongside the binary (e.g. in SDK archive).
@@ -781,7 +802,7 @@ fn resolve_gale_dep() -> String {
                 let lib_path = install_dir.join("lib");
                 if lib_path.join("Cargo.toml").exists() {
                     let escaped = lib_path.to_string_lossy().replace('\\', "/");
-                    return format!("{{ path = \"{escaped}\" }}");
+                    return format!("{{ path = \"{escaped}\"{no_tls} }}");
                 }
             }
         }
@@ -790,7 +811,7 @@ fn resolve_gale_dep() -> String {
     // 3. Fall back to git dependency pinned to the current release tag.
     //    Cargo caches the clone in ~/.cargo/git/ after the first build.
     format!(
-        "{{ git = \"https://github.com/m-de-graaff/Gale\", tag = \"v{}\" }}",
+        "{{ git = \"https://github.com/m-de-graaff/Gale\", tag = \"v{}\"{no_tls} }}",
         env!("CARGO_PKG_VERSION")
     )
 }
