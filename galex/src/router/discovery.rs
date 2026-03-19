@@ -1,7 +1,6 @@
 //! Filesystem walking and route tree construction.
 
 use std::path::{Path, PathBuf};
-use walkdir::WalkDir;
 
 use super::{DiscoveredRoute, RouteError, RouteNode};
 

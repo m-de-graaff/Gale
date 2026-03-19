@@ -8,8 +8,7 @@ use std::collections::HashMap;
 
 use super::client::RegistryClient;
 use super::lockfile::Lockfile;
-use super::PackageMeta;
-use crate::config::{DependencySpec, GalexConfig};
+use crate::config::GalexConfig;
 
 /// A fully resolved package ready to install.
 #[derive(Debug, Clone)]

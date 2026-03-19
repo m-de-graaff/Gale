@@ -4,7 +4,6 @@
 //! The layout's `<slot/>` is replaced by the page's body HTML.
 //! The layout's `<head>` receives the page's head metadata.
 
-use super::head;
 use super::hydration::HydrationCtx;
 use super::rust_emitter::RustEmitter;
 use super::ssr;

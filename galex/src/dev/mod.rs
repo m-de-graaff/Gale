@@ -92,7 +92,7 @@ pub async fn run_dev_server(app_dir: &Path, port: u16) -> Result<(), Box<dyn std
     loop {
         tokio::select! {
             Some(changes) = file_watcher.next_changes() => {
-                let start = Instant::now();
+                let _start = Instant::now();
                 let summary = summarize_changes(&changes);
                 eprintln!();
                 eprintln!("  {summary}");

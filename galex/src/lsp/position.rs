@@ -59,7 +59,7 @@ fn node_in_item(item: &Item, file_id: u32, offset: u32) -> Option<NodeInfo> {
     match item {
         Item::FnDecl(d) if d.span.file_id == file_id && d.span.contains_offset(offset) => {
             // Check if cursor is on the name
-            if let Some(info) = check_ident_at(&d.name, &d.span, offset) {
+            if let Some(_info) = check_ident_at(&d.name, &d.span, offset) {
                 return Some(NodeInfo::Decl {
                     name: d.name.clone(),
                     kind: DeclKind::Function,

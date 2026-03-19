@@ -89,6 +89,7 @@ pub struct Parser<'src> {
     /// Accumulated lex errors (from the lexer).
     lex_errors: Vec<LexError>,
     /// File ID for span construction.
+    #[allow(dead_code)]
     file_id: u32,
 }
 
@@ -125,6 +126,7 @@ impl<'src> Parser<'src> {
     }
 
     /// Peek at the token `n` positions ahead (0-indexed).
+    #[allow(dead_code)]
     fn peek_nth(&mut self, n: usize) -> &Token {
         self.fill_peek(n + 1);
         &self.peeked[n].0
@@ -148,6 +150,7 @@ impl<'src> Parser<'src> {
     }
 
     /// Check if the current token is any of the given tokens.
+    #[allow(dead_code)]
     fn at_any(&mut self, tokens: &[Token]) -> bool {
         let current = std::mem::discriminant(self.peek());
         tokens.iter().any(|t| std::mem::discriminant(t) == current)

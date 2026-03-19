@@ -4,7 +4,6 @@ use lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind};
 
 use super::document::DocumentManager;
 use super::position::{self, NodeInfo};
-use crate::checker::TypeChecker;
 
 /// Provide hover information at the given byte offset.
 pub fn provide_hover(docs: &DocumentManager, file_id: u32, offset: u32) -> Option<Hover> {

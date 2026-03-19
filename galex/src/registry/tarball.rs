@@ -1,6 +1,5 @@
 //! Tarball packing, extraction, and checksum computation.
 
-use std::io::{Read, Write};
 use std::path::Path;
 
 use flate2::read::GzDecoder;

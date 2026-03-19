@@ -13,6 +13,7 @@ struct Printer {
 }
 
 const INDENT: &str = "  ";
+#[allow(dead_code)]
 const MAX_INLINE_LEN: usize = 80;
 
 impl Printer {

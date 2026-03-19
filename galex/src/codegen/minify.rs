@@ -12,7 +12,7 @@
 //! 3. Builds a rename map for safe-to-rename locals.
 //! 4. Emits the token stream with renames applied and minimal whitespace.
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 
 // ── Basic Minifier ─────────────────────────────────────────────────────
 
@@ -207,7 +207,7 @@ fn tokenize_js(src: &str) -> Vec<Tok> {
         // ── Comments ───────────────────────────────────────
         if b == b'/' && i + 1 < len {
             if bytes[i + 1] == b'/' {
-                let start = i;
+                let _start = i;
                 while i < len && bytes[i] != b'\n' {
                     i += 1;
                 }

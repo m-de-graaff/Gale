@@ -220,7 +220,7 @@ fn emit_handler_fn(
 /// the `[data-gale-slot]` region without a full page reload.
 fn emit_json_handler_fn(
     e: &mut RustEmitter,
-    decl: &ComponentDecl,
+    _decl: &ComponentDecl,
     server_bindings: &[(String, Option<String>)],
     path_params: &[String],
 ) {

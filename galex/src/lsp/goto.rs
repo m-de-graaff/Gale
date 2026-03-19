@@ -1,6 +1,5 @@
 //! Go-to-definition, find references, and rename.
 
-use std::collections::HashSet;
 
 use lsp_types::{Location, Position, Range, TextEdit, Url, WorkspaceEdit};
 
