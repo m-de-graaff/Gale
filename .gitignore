@@ -30,7 +30,9 @@ nul
 
 # Node.js
 node_modules/
+# pnpm lockfiles (except editor extensions — needed for CI cache)
 pnpm-lock.yaml
+!galex/editors/vscode/pnpm-lock.yaml
 
 # VSCode extension build artifacts
 *.vsix
