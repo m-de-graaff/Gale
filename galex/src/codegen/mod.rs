@@ -596,13 +596,10 @@ impl<'a> CodegenContext<'a> {
             );
         }
 
-        // Client runtime JS — embedded from the hand-written runtime source
-        if self.has_client_code {
-            self.files.add_file(
-                "public/_gale/runtime.js",
-                include_str!("../runtime/gale_runtime.js").to_string(),
-            );
-        }
+        // Client runtime JS — written directly in write(), not through
+        // self.files, to guarantee it is NEVER processed by any minifier.
+        // The runtime is an ES module whose export names must be preserved
+        // exactly for page script imports to work.
 
         // Default asset manifest (identity map — no hashing).
         // Production builds replace this with hashed entries via
@@ -726,7 +723,22 @@ impl<'a> CodegenContext<'a> {
 
     /// Write all generated files to disk.
     pub fn write(&self, output_dir: &Path) -> std::io::Result<()> {
-        self.files.write_to_disk(output_dir)
+        self.files.write_to_disk(output_dir)?;
+
+        // Write runtime.js directly — bypass ALL file processing.
+        // The runtime is a hand-written ES module whose export names
+        // (_readData, signal, effect, hydrate, _registerSignal, etc.)
+        // MUST be preserved exactly for page script imports to work.
+        if self.has_client_code {
+            let runtime_dir = output_dir.join("public").join("_gale");
+            std::fs::create_dir_all(&runtime_dir)?;
+            std::fs::write(
+                runtime_dir.join("runtime.js"),
+                include_str!("../runtime/gale_runtime.js"),
+            )?;
+        }
+
+        Ok(())
     }
 }
 

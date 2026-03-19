@@ -1,6 +1,6 @@
 [package]
 name = "galex"
-version = "0.2.4"
+version = "0.2.5"
 edition = "2021"
 description = "GaleX language lexer and compiler toolchain"
 license = "MIT/Apache-2.0"

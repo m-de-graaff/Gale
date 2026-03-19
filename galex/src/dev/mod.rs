@@ -34,6 +34,26 @@ pub async fn run_dev_server(app_dir: &Path, port: u16) -> Result<(), Box<dyn std
     // Shared flag for late-connecting WebSocket clients
     let pending_reload = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
 
+    // ── Version mismatch check ────────────────────────────────
+    // If .gale_dev/ exists but was built with a different gale version,
+    // delete it to force a clean rebuild with the current version.
+    if output_dir.exists() {
+        let current_tag = format!("v{}", env!("CARGO_PKG_VERSION"));
+        let cargo_toml = output_dir.join("Cargo.toml");
+        let needs_clean = if cargo_toml.exists() {
+            match std::fs::read_to_string(&cargo_toml) {
+                Ok(contents) => !contents.contains(&current_tag),
+                Err(_) => true,
+            }
+        } else {
+            true
+        };
+        if needs_clean {
+            eprintln!("  Version mismatch detected — rebuilding...");
+            let _ = std::fs::remove_dir_all(&output_dir);
+        }
+    }
+
     // ── Initial build ──────────────────────────────────────────
     eprintln!();
     eprintln!("  Gale dev server");

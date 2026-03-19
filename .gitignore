@@ -40,3 +40,6 @@ out/
 
 # AI tool working directories
 .opencode/
+
+# Local test projects
+sandbox/
