@@ -219,11 +219,13 @@ impl LanguageServer for GaleLsp {
         params: DocumentSymbolParams,
     ) -> Result<Option<DocumentSymbolResponse>> {
         let docs = self.documents.lock().unwrap();
-        let ast = match docs.get_ast(&params.text_document.uri) {
+        let uri = &params.text_document.uri;
+        let ast = match docs.get_ast(uri) {
             Some(a) => a,
             None => return Ok(None),
         };
-        let syms = symbols::document_symbols(ast);
+        let source = docs.get_source(uri).unwrap_or("");
+        let syms = symbols::document_symbols(ast, source);
         Ok(Some(DocumentSymbolResponse::Nested(syms)))
     }
 

@@ -191,9 +191,17 @@ async fn proxy_handler(State(state): State<DevServerState>, req: Request<Body>) 
 
     // Collect the full response body
     use http_body_util::BodyExt;
-    let (parts, incoming) = response.into_parts();
+    let (mut parts, incoming) = response.into_parts();
     let collected = incoming.collect().await.unwrap_or_default();
     let body_bytes = collected.to_bytes();
+
+    // Remove stale content-length / transfer-encoding — Axum will set
+    // the correct values based on the new body we construct below.
+    // Without this, the browser receives a Content-Length that doesn't
+    // match the actual body (especially after dev script injection),
+    // causing ERR_EMPTY_RESPONSE.
+    parts.headers.remove("content-length");
+    parts.headers.remove("transfer-encoding");
 
     let is_html = parts
         .headers

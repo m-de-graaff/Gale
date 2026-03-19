@@ -7,64 +7,41 @@ use lsp_types::{
 use crate::ast::*;
 
 /// Extract document symbols (outline) from a program.
-pub fn document_symbols(program: &Program) -> Vec<DocumentSymbol> {
+///
+/// `source` is needed to compute proper end positions for spans.
+pub fn document_symbols(program: &Program, source: &str) -> Vec<DocumentSymbol> {
     let mut symbols = Vec::new();
     for item in &program.items {
-        if let Some(sym) = symbol_for_item(item) {
+        if let Some(sym) = symbol_for_item(item, source) {
             symbols.push(sym);
         }
     }
     symbols
 }
 
-fn symbol_for_item(item: &Item) -> Option<DocumentSymbol> {
+fn symbol_for_item(item: &Item, source: &str) -> Option<DocumentSymbol> {
     match item {
-        Item::ComponentDecl(d) => Some(make_symbol(
-            &d.name,
-            SymbolKind::CLASS,
-            &d.span,
-            &d.body.span,
-        )),
-        Item::LayoutDecl(d) => Some(make_symbol(
-            &d.name,
-            SymbolKind::CLASS,
-            &d.span,
-            &d.body.span,
-        )),
-        Item::FnDecl(d) => Some(make_symbol(&d.name, SymbolKind::FUNCTION, &d.span, &d.span)),
-        Item::GuardDecl(d) => Some(make_symbol(&d.name, SymbolKind::STRUCT, &d.span, &d.span)),
-        Item::StoreDecl(d) => Some(make_symbol(&d.name, SymbolKind::MODULE, &d.span, &d.span)),
-        Item::ActionDecl(d) => Some(make_symbol(&d.name, SymbolKind::FUNCTION, &d.span, &d.span)),
-        Item::QueryDecl(d) => Some(make_symbol(
-            &d.name,
-            SymbolKind::INTERFACE,
-            &d.span,
-            &d.span,
-        )),
-        Item::ChannelDecl(d) => Some(make_symbol(
-            &d.name,
-            SymbolKind::INTERFACE,
-            &d.span,
-            &d.span,
-        )),
-        Item::EnumDecl(d) => Some(make_symbol(&d.name, SymbolKind::ENUM, &d.span, &d.span)),
+        Item::ComponentDecl(d) => Some(make_symbol(&d.name, SymbolKind::CLASS, &d.span, source)),
+        Item::LayoutDecl(d) => Some(make_symbol(&d.name, SymbolKind::CLASS, &d.span, source)),
+        Item::FnDecl(d) => Some(make_symbol(&d.name, SymbolKind::FUNCTION, &d.span, source)),
+        Item::GuardDecl(d) => Some(make_symbol(&d.name, SymbolKind::STRUCT, &d.span, source)),
+        Item::StoreDecl(d) => Some(make_symbol(&d.name, SymbolKind::MODULE, &d.span, source)),
+        Item::ActionDecl(d) => Some(make_symbol(&d.name, SymbolKind::FUNCTION, &d.span, source)),
+        Item::QueryDecl(d) => Some(make_symbol(&d.name, SymbolKind::INTERFACE, &d.span, source)),
+        Item::ChannelDecl(d) => Some(make_symbol(&d.name, SymbolKind::INTERFACE, &d.span, source)),
+        Item::EnumDecl(d) => Some(make_symbol(&d.name, SymbolKind::ENUM, &d.span, source)),
         Item::TypeAlias(d) => Some(make_symbol(
             &d.name,
             SymbolKind::TYPE_PARAMETER,
             &d.span,
-            &d.span,
+            source,
         )),
-        Item::ApiDecl(d) => Some(make_symbol(
-            &d.name,
-            SymbolKind::NAMESPACE,
-            &d.span,
-            &d.span,
-        )),
+        Item::ApiDecl(d) => Some(make_symbol(&d.name, SymbolKind::NAMESPACE, &d.span, source)),
         Item::MiddlewareDecl(d) => {
-            Some(make_symbol(&d.name, SymbolKind::FUNCTION, &d.span, &d.span))
+            Some(make_symbol(&d.name, SymbolKind::FUNCTION, &d.span, source))
         }
-        Item::TestDecl(d) => Some(make_symbol(&d.name, SymbolKind::METHOD, &d.span, &d.span)),
-        Item::Out(out) => symbol_for_item(&out.inner),
+        Item::TestDecl(d) => Some(make_symbol(&d.name, SymbolKind::METHOD, &d.span, source)),
+        Item::Out(out) => symbol_for_item(&out.inner, source),
         _ => None,
     }
 }
@@ -73,17 +50,20 @@ fn symbol_for_item(item: &Item) -> Option<DocumentSymbol> {
 fn make_symbol(
     name: &str,
     kind: SymbolKind,
-    full_span: &crate::span::Span,
-    sel_span: &crate::span::Span,
+    span: &crate::span::Span,
+    source: &str,
 ) -> DocumentSymbol {
+    let range = span_to_range(span, source);
     DocumentSymbol {
         name: name.to_string(),
         detail: None,
         kind,
         tags: None,
         deprecated: None,
-        range: span_to_range(full_span),
-        selection_range: span_to_range(sel_span),
+        range,
+        // selectionRange must be contained in range — use the full range
+        // for both since the AST does not store a separate name span.
+        selection_range: range,
         children: None,
     }
 }
@@ -163,11 +143,15 @@ pub fn format_document(source: &str) -> Option<Vec<TextEdit>> {
     }])
 }
 
-fn span_to_range(span: &crate::span::Span) -> Range {
+fn span_to_range(span: &crate::span::Span, source: &str) -> Range {
     let start = Position {
         line: span.line.saturating_sub(1),
         character: span.col.saturating_sub(1),
     };
-    // Use start as end for selection range (approximate)
-    Range { start, end: start }
+    let (end_line, end_col) = span.end_position(source);
+    let end = Position {
+        line: end_line.saturating_sub(1),
+        character: end_col.saturating_sub(1),
+    };
+    Range { start, end }
 }
