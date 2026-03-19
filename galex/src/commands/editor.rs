@@ -87,7 +87,18 @@ fn install_vscode() -> i32 {
     }
 
     // Run: code --install-extension <path>
+    //
+    // On Windows `code` is a .cmd script, not an .exe, so it must be
+    // launched through `cmd /c` — Command::new("code") alone will not
+    // find it even when it is on PATH.
     eprintln!("  Running: code --install-extension {}", tmp_path.display());
+    #[cfg(windows)]
+    let status = Command::new("cmd")
+        .args(["/c", "code", "--install-extension"])
+        .arg(&tmp_path)
+        .arg("--force")
+        .status();
+    #[cfg(not(windows))]
     let status = Command::new("code")
         .arg("--install-extension")
         .arg(&tmp_path)

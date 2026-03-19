@@ -1203,7 +1203,7 @@ dependencies = [
 
 [[package]]
 name = "gale"
-version = "0.1.1"
+version = "0.1.3"
 dependencies = [
  "axum",
  "axum-server",
@@ -1241,7 +1241,7 @@ dependencies = [
 
 [[package]]
 name = "galex"
-version = "0.1.1"
+version = "0.1.3"
 dependencies = [
  "axum",
  "clap",
