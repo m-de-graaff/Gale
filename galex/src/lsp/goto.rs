@@ -1,6 +1,5 @@
 //! Go-to-definition, find references, and rename.
 
-
 use lsp_types::{Location, Position, Range, TextEdit, Url, WorkspaceEdit};
 
 use super::document::DocumentManager;

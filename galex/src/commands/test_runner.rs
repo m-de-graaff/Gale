@@ -3,7 +3,6 @@
 //! Server-side test blocks are compiled to Rust `#[test]` functions
 //! and executed via `cargo test` in a temporary project.
 
-
 use crate::ast::TestDecl;
 use crate::compiler::Compiler;
 

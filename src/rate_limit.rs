@@ -107,7 +107,7 @@ fn try_acquire(inner: &RateLimiterInner, ip: IpAddr) -> AcquireResult {
     }
 
     // Refill tokens based on elapsed time
-    refill_tokens(&mut *state, inner.requests_per_second, inner.burst);
+    refill_tokens(&mut state, inner.requests_per_second, inner.burst);
 
     // Try to consume one token
     if state.tokens >= 1.0 {

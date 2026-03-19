@@ -15,8 +15,8 @@ export function Tabs({ tabs, className }: TabsProps) {
   const [active, setActive] = useState(0)
 
   return (
-    <div className={cn('rounded-lg border border-border/60 overflow-hidden', className)}>
-      <div className="flex border-b border-border/40 bg-[#0c1017]">
+    <div className={cn('rounded-lg border border-border overflow-hidden', className)}>
+      <div className="flex border-b border-border bg-muted/50">
         {tabs.map((tab, i) => (
           <button
             key={tab.label}
@@ -25,7 +25,7 @@ export function Tabs({ tabs, className }: TabsProps) {
               'px-4 py-2 text-[12px] font-medium transition-colors relative',
               active === i
                 ? 'text-foreground'
-                : 'text-muted-foreground/60 hover:text-muted-foreground'
+                : 'text-muted-foreground hover:text-foreground/70'
             )}
           >
             {tab.label}
@@ -35,7 +35,7 @@ export function Tabs({ tabs, className }: TabsProps) {
           </button>
         ))}
       </div>
-      <div className="bg-[#0a0d12]">
+      <div className="bg-[#fafafa]">
         {tabs[active]?.content}
       </div>
     </div>

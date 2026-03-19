@@ -147,7 +147,14 @@ fn collect_server_bindings(stmts: &[Stmt]) -> Vec<(String, Option<String>)> {
                 let init_expr = expr_to_rust(init);
                 bindings.push((rust_name, Some(init_expr)));
             }
-            _ => {} // Skip signals, derives, refs, etc. (client-only)
+            // Signals are client-side reactive state, but SSR needs their
+            // initial value so template expressions like {count} can render.
+            Stmt::Signal { name, init, .. } => {
+                let rust_name = to_snake_case(name);
+                let init_expr = expr_to_rust(init);
+                bindings.push((rust_name, Some(init_expr)));
+            }
+            _ => {} // Skip derives, refs, effects, etc.
         }
     }
     bindings

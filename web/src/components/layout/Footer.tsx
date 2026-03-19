@@ -41,45 +41,31 @@ const FOOTER_SECTIONS = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-[rgba(255,255,255,0.06)]">
+    <footer className="border-t border-border">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-          {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 text-accent mb-3">
               <GaleLogo />
               <span className="font-semibold text-[15px] text-foreground tracking-tight">Gale</span>
             </div>
-            <p className="text-[12px] text-muted-foreground/70 leading-relaxed max-w-[200px]">
+            <p className="text-[12px] text-muted-foreground leading-relaxed max-w-[200px]">
               Rust-native web framework. Write .gx files, ship a single binary.
             </p>
           </div>
 
-          {/* Link columns */}
           {FOOTER_SECTIONS.map(section => (
             <div key={section.title}>
-              <h4 className="text-[11px] font-medium tracking-wider uppercase text-muted-foreground/50 mb-3">
+              <h4 className="text-[11px] font-medium tracking-wider uppercase text-muted-foreground/60 mb-3">
                 {section.title}
               </h4>
               <ul className="flex flex-col gap-2">
                 {section.links.map(link => (
                   <li key={link.href}>
                     {'external' in link && link.external ? (
-                      <a
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {link.label}
-                      </a>
+                      <a href={link.href} target="_blank" rel="noopener noreferrer" className="text-[13px] text-muted-foreground hover:text-foreground transition-colors">{link.label}</a>
                     ) : (
-                      <Link
-                        to={link.href}
-                        className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {link.label}
-                      </Link>
+                      <Link to={link.href} className="text-[13px] text-muted-foreground hover:text-foreground transition-colors">{link.label}</Link>
                     )}
                   </li>
                 ))}
@@ -88,19 +74,9 @@ export function Footer() {
           ))}
         </div>
 
-        {/* Bottom */}
-        <div className="mt-10 pt-6 border-t border-[rgba(255,255,255,0.06)] flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-[11px] text-muted-foreground/50">
-            MIT / Apache-2.0 &mdash; Gale contributors
-          </p>
-          <a
-            href="https://github.com/m-de-graaff/Gale"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[11px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-          >
-            github.com/m-de-graaff/Gale
-          </a>
+        <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[11px] text-muted-foreground/60">MIT / Apache-2.0 &mdash; Gale contributors</p>
+          <a href="https://github.com/m-de-graaff/Gale" target="_blank" rel="noopener noreferrer" className="text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">github.com/m-de-graaff/Gale</a>
         </div>
       </div>
     </footer>

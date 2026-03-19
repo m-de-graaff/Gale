@@ -1,0 +1,12 @@
+# Build output
+gale_build/
+.gale_dev/
+target/
+
+# Dependencies
+node_modules/
+gale_modules/
+
+# Environment
+.env
+.env.local

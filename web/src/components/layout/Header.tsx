@@ -34,16 +34,14 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[rgba(255,255,255,0.06)] bg-black/70 backdrop-blur-lg">
+    <header className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-lg">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-        {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 text-accent hover:opacity-80 transition-opacity">
           <GaleLogo />
           <span className="font-semibold text-[15px] text-foreground tracking-tight">Gale</span>
           <Badge variant="warning" className="hidden sm:inline-flex">Alpha</Badge>
         </Link>
 
-        {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">
           {NAV_LINKS.map(link => (
             <Link
@@ -52,7 +50,7 @@ export function Header() {
               className={cn(
                 'px-3 py-1.5 rounded-md text-[13px] transition-colors',
                 isActive(link.href)
-                  ? 'text-foreground'
+                  ? 'text-foreground font-medium'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
@@ -68,15 +66,12 @@ export function Header() {
             GitHub
             <ExternalLink className="w-3 h-3" />
           </a>
-
-          {/* Search hint */}
-          <div className="ml-2 flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] text-muted-foreground/50 cursor-default select-none">
+          <div className="ml-2 flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-muted/50 text-muted-foreground/50 cursor-default select-none">
             <Search className="w-3 h-3" />
             <span className="text-[11px] font-mono">⌘K</span>
           </div>
         </nav>
 
-        {/* Mobile toggle */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
           className="md:hidden p-2 text-muted-foreground hover:text-foreground"
@@ -85,9 +80,8 @@ export function Header() {
         </button>
       </div>
 
-      {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-[rgba(255,255,255,0.06)] bg-black/95 backdrop-blur-lg">
+        <div className="md:hidden border-t border-border bg-white/95 backdrop-blur-lg">
           <nav className="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-1">
             {NAV_LINKS.map(link => (
               <Link
@@ -97,7 +91,7 @@ export function Header() {
                 className={cn(
                   'px-3 py-2 rounded-md text-[13px] transition-colors',
                   isActive(link.href)
-                    ? 'text-foreground'
+                    ? 'text-foreground font-medium'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
@@ -110,8 +104,7 @@ export function Header() {
               rel="noopener noreferrer"
               className="px-3 py-2 rounded-md text-[13px] text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5"
             >
-              GitHub
-              <ExternalLink className="w-3 h-3" />
+              GitHub <ExternalLink className="w-3 h-3" />
             </a>
           </nav>
         </div>

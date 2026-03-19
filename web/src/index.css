@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
-/* ── Gale design tokens — Vercel-inspired pure-black ─────────────────── */
+/* ── Gale design tokens — Light mode ─────────────────────────────────── */
 :root {
-  --background:         0 0% 0%;
-  --foreground:         0 0% 93%;
-  --card:               0 0% 4%;
-  --card-foreground:    0 0% 93%;
-  --muted:              0 0% 9%;
-  --muted-foreground:   0 0% 45%;
-  --border:             0 0% 12%;
-  --input:              0 0% 12%;
-  --ring:               162 72% 46%;
+  --background:         0 0% 100%;
+  --foreground:         0 0% 9%;
+  --card:               0 0% 100%;
+  --card-foreground:    0 0% 9%;
+  --muted:              0 0% 96%;
+  --muted-foreground:   0 0% 40%;
+  --border:             0 0% 90%;
+  --input:              0 0% 90%;
+  --ring:               162 72% 38%;
   --radius:             0.5rem;
-  --accent:             162 72% 46%;
-  --accent-foreground:  0 0% 0%;
+  --accent:             162 72% 38%;
+  --accent-foreground:  0 0% 100%;
   --destructive:        0 72% 51%;
-  --warning:            38 92% 50%;
+  --warning:            38 92% 40%;
 }
 
 /* ── Tailwind v4 token bridge ────────────────────────────────────────── */
@@ -95,7 +95,7 @@ img { display: block; max-width: 100%; }
 .prose pre {
   margin: 1rem 0;
   padding: 1rem 1.25rem;
-  background: hsl(0 0% 3%);
+  background: #fafafa;
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
   overflow-x: auto;
