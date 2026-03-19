@@ -116,9 +116,8 @@ fn install_vscode() -> i32 {
 
 fn install_zed() -> i32 {
     let zip_name = format!("gale-zed-{CURRENT_VERSION}.zip");
-    let download_url = format!(
-        "https://github.com/{GITHUB_REPO}/releases/download/v{CURRENT_VERSION}/{zip_name}"
-    );
+    let download_url =
+        format!("https://github.com/{GITHUB_REPO}/releases/download/v{CURRENT_VERSION}/{zip_name}");
 
     eprintln!("  Installing Gale Zed extension v{CURRENT_VERSION}...");
     eprintln!("  Downloading {zip_name}...");

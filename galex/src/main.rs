@@ -168,9 +168,7 @@ fn main() {
         Command::Login => galex::commands::login::run(),
         Command::SelfUpdate => galex::commands::self_update::run(),
         Command::Editor { command } => match command {
-            EditorCommand::Install { editor } => {
-                galex::commands::editor::run_install(&editor)
-            }
+            EditorCommand::Install { editor } => galex::commands::editor::run_install(&editor),
         },
     };
     process::exit(exit_code);

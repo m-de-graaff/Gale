@@ -133,9 +133,7 @@ async fn run_async() -> i32 {
     }
 
     // ── Prompt for confirmation ────────────────────────────────
-    eprintln!(
-        "  New version available: v{latest_tag}  (current: v{CURRENT_VERSION})"
-    );
+    eprintln!("  New version available: v{latest_tag}  (current: v{CURRENT_VERSION})");
     let confirmed = dialoguer::Confirm::new()
         .with_prompt("  Install update?")
         .default(true)
@@ -161,11 +159,7 @@ async fn run_async() -> i32 {
     eprintln!("  Downloading {asset_name}...");
 
     // ── Download archive ───────────────────────────────────────
-    let bytes = match client
-        .get(&asset.browser_download_url)
-        .send()
-        .await
-    {
+    let bytes = match client.get(&asset.browser_download_url).send().await {
         Ok(r) => match r.bytes().await {
             Ok(b) => b.to_vec(),
             Err(e) => {
@@ -220,11 +214,7 @@ async fn run_async() -> i32 {
 
 // ── Archive extraction ─────────────────────────────────────────────────
 
-fn extract_archive(
-    bytes: &[u8],
-    dest: &Path,
-    ext: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn extract_archive(bytes: &[u8], dest: &Path, ext: &str) -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all(dest)?;
 
     if ext == "tar.gz" {
