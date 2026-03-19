@@ -51,7 +51,15 @@ impl TypeChecker {
                     let binding_clone = binding.clone();
                     // Check cross-boundary access before returning the type
                     self.check_boundary_access(name, &binding_clone, *span);
-                    binding_clone.ty
+                    // Auto-unwrap Signal(T) → T in read contexts.
+                    // Signals are transparently reactive — reading a signal
+                    // in templates, operators, and function arguments should
+                    // see the inner type, not the Signal wrapper.
+                    let ty = binding_clone.ty;
+                    match self.interner.get(ty).clone() {
+                        TypeData::Signal(inner) => inner,
+                        _ => ty,
+                    }
                 } else {
                     self.emit_error(crate::types::constraint::TypeError {
                         code: &codes::GX0302,

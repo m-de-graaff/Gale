@@ -108,10 +108,10 @@ export function InstallPage() {
         </p>
 
         {/* SDK table */}
-        <div className="rounded-lg border border-border/40 overflow-hidden mb-6">
+        <div className="rounded-lg border border-border overflow-hidden mb-6">
           <table className="w-full text-[13px]">
             <thead>
-              <tr className="border-b border-border/40 bg-card/60">
+              <tr className="border-b border-border bg-muted/50">
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Platform</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Artifact</th>
               </tr>
@@ -128,10 +128,10 @@ export function InstallPage() {
         </div>
 
         {/* Extensions table */}
-        <div className="rounded-lg border border-border/40 overflow-hidden mb-12">
+        <div className="rounded-lg border border-border overflow-hidden mb-12">
           <table className="w-full text-[13px]">
             <thead>
-              <tr className="border-b border-border/40 bg-card/60">
+              <tr className="border-b border-border bg-muted/50">
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Extension</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Artifact</th>
               </tr>

@@ -108,7 +108,7 @@ export function DocLayout({ children }: DocLayoutProps) {
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-background border-r border-border/40 p-6 pt-20 overflow-y-auto">
+          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-white border-r border-border p-6 pt-20 overflow-y-auto">
             {sidebar}
           </aside>
         </div>
@@ -122,7 +122,7 @@ export function DocLayout({ children }: DocLayoutProps) {
       </aside>
 
       {/* Content */}
-      <main className="flex-1 min-w-0 py-8 lg:pl-6 lg:border-l lg:border-border/30">
+      <main className="flex-1 min-w-0 py-8 lg:pl-6 lg:border-l lg:border-border">
         <div className="prose max-w-none">
           {children}
         </div>

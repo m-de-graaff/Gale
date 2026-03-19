@@ -125,7 +125,7 @@ export function EditorPage() {
         <h2 className="text-xl font-bold tracking-tight mb-4">Features</h2>
         <div className="space-y-2 mb-6">
           {config.features.map(f => (
-            <div key={f.name} className="flex items-start gap-3 p-3 rounded-lg border border-border/30 bg-card/30">
+            <div key={f.name} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/30">
               <div className="mt-0.5">
                 {f.status === 'working' ? (
                   <Check className="w-4 h-4 text-accent" />
@@ -163,7 +163,7 @@ export function EditorPage() {
         <h2 className="text-xl font-bold tracking-tight mb-4">Troubleshooting</h2>
         <div className="space-y-3 mb-10">
           {config.troubleshooting.map((item, i) => (
-            <div key={i} className="p-4 rounded-lg border border-border/30 bg-card/30">
+            <div key={i} className="p-4 rounded-lg border border-border bg-muted/30">
               <h3 className="text-[13px] font-semibold text-foreground mb-1">{item.q}</h3>
               <p className="text-[12px] text-muted-foreground/70">{item.a}</p>
             </div>

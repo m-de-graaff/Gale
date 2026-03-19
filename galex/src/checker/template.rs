@@ -352,6 +352,10 @@ impl TypeChecker {
             TypeData::TypeVar(_) => {
                 // Type not yet resolved — defer
             }
+            // Assignment expressions (e.g. on:click={count = count + 1})
+            // and void expressions (blocks, calls) are valid inline
+            // event handlers — the codegen wraps them in a JS listener.
+            TypeData::Void => {}
             _ => {
                 // GX0714: on:x handler must be a function
                 self.emit_error(crate::types::constraint::TypeError {

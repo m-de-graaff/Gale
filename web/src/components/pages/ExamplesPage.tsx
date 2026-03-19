@@ -177,7 +177,7 @@ export function ExamplesPage() {
 
         <div className="space-y-3 mb-12">
           {REPO_DEMOS.map(demo => (
-            <div key={demo.name} className="p-4 rounded-lg border border-border/40 bg-card/30">
+            <div key={demo.name} className="p-4 rounded-lg border border-border bg-muted/30">
               <h3 className="text-[14px] font-semibold font-mono text-foreground mb-1">{demo.name}</h3>
               <p className="text-[12px] text-muted-foreground/80 mb-2">{demo.description}</p>
               <div className="flex items-start gap-1.5 text-[11px] text-warning/80">
