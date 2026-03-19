@@ -70,9 +70,24 @@ pub fn run_tailwind_cli(
     // In v4, the input CSS IS the configuration (no separate tailwind.config.js).
     let input_css_path = if let Some(ref custom_css) = tw_config.input_css {
         if custom_css.is_file() {
-            // User's custom CSS — copy to work dir so we can reference it
+            // User's custom CSS — copy to work dir, injecting @source
+            // so Tailwind v4 scans .gx files for class names.
             let dest = work_dir.join("input.css");
-            std::fs::copy(custom_css, &dest)?;
+            let mut css = std::fs::read_to_string(custom_css)?;
+            let app_glob = format!("{}/**/*.gx", app_dir.to_string_lossy().replace('\\', "/"));
+            let source_line = format!("\n@source \"{}\";\n", app_glob);
+            // Insert after @import "tailwindcss" if present
+            if let Some(pos) = css.find("@import \"tailwindcss\"") {
+                if let Some(end) = css[pos..].find(';') {
+                    let insert_at = pos + end + 1;
+                    css.insert_str(insert_at, &source_line);
+                } else {
+                    css.push_str(&source_line);
+                }
+            } else {
+                css = format!("{source_line}{css}");
+            }
+            std::fs::write(&dest, &css)?;
             dest
         } else {
             config::generate_tailwind_config(tw_config, app_dir, safelist, &work_dir)

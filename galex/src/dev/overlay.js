@@ -1,14 +1,21 @@
 // GaleX Dev Client — injected by `gale dev` into every page.
-// Handles: WebSocket connection, page reload, CSS hot reload, error overlay.
+// Handles: WebSocket connection, hot reload with state preservation,
+// CSS hot reload, error overlay, reconnection with backoff.
 (function() {
   'use strict';
 
   var ws = null;
   var overlay = null;
   var reconnectTimer = null;
+  var reconnectDelay = 500; // Start at 500ms, backoff to 4s
 
   function connect() {
     ws = new WebSocket('ws://' + location.host + '/__gale_dev/ws');
+
+    ws.onopen = function() {
+      // Reset backoff on successful connection
+      reconnectDelay = 500;
+    };
 
     ws.onmessage = function(e) {
       var msg;
@@ -16,6 +23,8 @@
 
       switch (msg.type) {
         case 'Reload':
+          // Preserve signal state before reload
+          saveSignalState();
           location.reload();
           break;
 
@@ -50,7 +59,7 @@
 
     ws.onclose = function() {
       showReconnecting();
-      // Retry connection every 2 seconds
+      // Retry with exponential backoff: 500ms → 1s → 2s → 4s (cap)
       clearInterval(reconnectTimer);
       reconnectTimer = setInterval(function() {
         try {
@@ -58,13 +67,45 @@
           retry.onopen = function() {
             clearInterval(reconnectTimer);
             hideReconnecting();
+            // Preserve state before reconnect-reload
+            saveSignalState();
             location.reload();
           };
           retry.onerror = function() { retry.close(); };
         } catch (_) {}
-      }, 2000);
+        // Exponential backoff (cap at 4s)
+        reconnectDelay = Math.min(reconnectDelay * 2, 4000);
+      }, reconnectDelay);
     };
   }
+
+  // ── Signal State Preservation ─────────────────────────────────────
+
+  function saveSignalState() {
+    try {
+      if (window.__gale_signals__) {
+        var state = {};
+        var signals = window.__gale_signals__;
+        for (var name in signals) {
+          if (signals.hasOwnProperty(name)) {
+            var val = signals[name].get();
+            // Only preserve serializable values
+            if (val !== undefined && val !== null) {
+              state[name] = val;
+            }
+          }
+        }
+        if (Object.keys(state).length > 0) {
+          sessionStorage.setItem('__gale_hmr_state__', JSON.stringify(state));
+        }
+      }
+    } catch (_) {
+      // Silently fail — state preservation is best-effort
+    }
+  }
+
+  // Note: state restoration happens in gale_runtime.js at load time.
+  // It reads from sessionStorage directly — no bridge function needed.
 
   // ── Error Overlay ──────────────────────────────────────────────────
 

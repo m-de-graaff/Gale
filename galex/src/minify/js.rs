@@ -467,10 +467,10 @@ fn fold_constants(tokens: &mut [Token]) {
                     tok.ty = Ty::Op;
                     tok.val = "!1".into();
                 }
-                "undefined" => {
-                    tok.ty = Ty::Op;
-                    tok.val = "void 0".into();
-                }
+                // Note: `undefined` → `void 0` was removed because
+                // "void 0" as a single Op token with an embedded space
+                // causes edge-case syntax errors when adjacent to other
+                // tokens.  The savings (~3 bytes) aren't worth the risk.
                 _ => {}
             }
         }
@@ -544,13 +544,15 @@ fn mangle_identifiers(tokens: &mut Vec<Token>) {
             Some(s) => s.clone(),
             None => continue,
         };
-        // Check if preceded by '.'
+        // Check if preceded by '.' or '?.' (property access / optional chaining)
         let prev = (0..i)
             .rev()
             .find(|&j| tokens[j].ty != Ty::Ws && tokens[j].ty != Ty::Comment)
             .map(|j| &tokens[j]);
-        if prev.map(|t| t.val.as_str()) == Some(".") {
-            continue;
+        if let Some(p) = prev {
+            if p.val == "." || p.val == "?." {
+                continue;
+            }
         }
         // Check if followed by ':'  (object key)
         let next = ((i + 1)..tokens.len())

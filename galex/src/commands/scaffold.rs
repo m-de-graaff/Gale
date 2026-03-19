@@ -399,6 +399,7 @@ fn package_json(name: &str) -> String {
 }
 
 const GLOBAL_CSS: &str = r#"@import "tailwindcss";
+@source "../app/**/*.gx";
 "#;
 
 // ── Tests ──────────────────────────────────────────────────────────────

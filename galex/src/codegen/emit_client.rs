@@ -63,6 +63,7 @@ pub fn emit_page_script(decl: &ComponentDecl) -> String {
         match stmt {
             Stmt::Signal { name, init, .. } => {
                 imports.insert("signal");
+                imports.insert("_registerSignal");
                 signals.push((name.as_str(), init));
             }
             Stmt::Derive { name, init, .. } => {
@@ -145,11 +146,12 @@ pub fn emit_page_script(decl: &ComponentDecl) -> String {
         js.push('\n');
     }
 
-    // Signal declarations — initialize from server data where available
+    // Signal declarations — initialize from server data where available,
+    // register with HMR state preservation system.
     for (name, init) in &signals {
         let init_js = expr_to_js(init, &signal_names);
         js.push_str(&format!(
-            "const {name} = signal($data.data?.{name} ?? {init_js});\n"
+            "const {name} = _registerSignal(\"{name}\", signal($data.data?.{name} ?? {init_js}));\n"
         ));
     }
     if !signals.is_empty() {
@@ -455,9 +457,13 @@ fn emit_directive_instructions(
                 }
 
                 if body_parts.is_empty() && !has_once {
+                    // Wrap the handler in an arrow function so it executes
+                    // on each click, not once at hydration time.
                     instructions.push((
                         id,
-                        format!("el => el.addEventListener(\"{event}\", {handler_js})"),
+                        format!(
+                            "el => el.addEventListener(\"{event}\", () => {{ {handler_js}; }})"
+                        ),
                     ));
                 } else {
                     body_parts.push(format!("({handler_js})(e)"));

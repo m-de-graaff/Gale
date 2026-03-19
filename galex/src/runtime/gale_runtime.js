@@ -1,6 +1,33 @@
 // GaleX Client Runtime — fine-grained reactive system with SSR hydration.
 // Target: <3KB gzipped. No virtual DOM — direct, targeted DOM mutations.
 
+// ── HMR Signal Registry ────────────────────────────────────────────────
+// Tracks all active signals by name for hot-reload state preservation.
+// The overlay.js saves signal values to sessionStorage before reload;
+// we restore them here on the next page load.
+let _hmrState = null;
+if (typeof window !== 'undefined') {
+  window.__gale_signals__ = {};
+  try {
+    const raw = sessionStorage.getItem('__gale_hmr_state__');
+    if (raw) {
+      _hmrState = JSON.parse(raw);
+      sessionStorage.removeItem('__gale_hmr_state__');
+    }
+  } catch (_) {}
+}
+
+export function _registerSignal(name, sig) {
+  if (typeof window !== 'undefined') {
+    window.__gale_signals__[name] = sig;
+    // Restore preserved value from previous hot reload
+    if (_hmrState && name in _hmrState) {
+      sig.set(_hmrState[name]);
+    }
+  }
+  return sig;
+}
+
 // ── Dependency Tracking ────────────────────────────────────────────────
 let _cur = null;
 const _stack = [];
