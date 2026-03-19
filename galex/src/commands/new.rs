@@ -66,6 +66,34 @@ pub fn run(name: Option<String>) -> i32 {
         return 1;
     }
 
+    // Install Tailwind dependencies if enabled
+    if include_tailwind {
+        eprintln!("  Installing dependencies...");
+        let npm = if cfg!(windows) { "cmd" } else { "npm" };
+        let args: &[&str] = if cfg!(windows) {
+            &["/c", "npm", "install"]
+        } else {
+            &["install"]
+        };
+        match std::process::Command::new(npm)
+            .args(args)
+            .current_dir(&project_name)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::inherit())
+            .status()
+        {
+            Ok(s) if s.success() => {}
+            Ok(_) => {
+                eprintln!("  warning: npm install failed — run it manually:");
+                eprintln!("    cd {project_name} && npm install");
+            }
+            Err(_) => {
+                eprintln!("  warning: npm not found — install Node.js, then run:");
+                eprintln!("    cd {project_name} && npm install");
+            }
+        }
+    }
+
     eprintln!("  Project created successfully!");
     eprintln!();
     eprintln!("  Next steps:");

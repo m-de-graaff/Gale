@@ -10,7 +10,7 @@
 
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use tokio::sync::broadcast;
 
@@ -62,7 +62,7 @@ impl RebuildManager {
     /// Run the full build pipeline (initial build).
     ///
     /// Returns the discovered routes on success, or errors on failure.
-    pub fn initial_build(&mut self) -> Result<Vec<router::DiscoveredRoute>, Vec<DevError>> {
+    pub async fn initial_build(&mut self) -> Result<Vec<router::DiscoveredRoute>, Vec<DevError>> {
         let start = Instant::now();
 
         // Step 1: Discover routes
@@ -113,17 +113,22 @@ impl RebuildManager {
                 }]
             })?;
 
-        // Step 5: CSS generation (non-fatal)
+        // Step 5: CSS generation — report errors instead of discarding
         let project_dir = self.app_dir.parent().unwrap_or(Path::new("."));
-        let _ = self
-            .compiler
-            .generate_css(project_dir, &self.app_dir, &self.output_dir, false);
+        if let Err(e) =
+            self.compiler
+                .generate_css(project_dir, &self.app_dir, &self.output_dir, false)
+        {
+            eprintln!("  warning: CSS generation failed: {e}");
+            eprintln!("  (Tailwind may not be available — styles will be missing)");
+        }
 
-        // Step 6: Cargo build
-        self.cargo_build()?;
+        // Step 6: Cargo build (async — doesn't block the proxy/WebSocket)
+        self.cargo_build().await?;
 
-        // Step 7: Start server
+        // Step 7: Start server and wait for it to accept connections
         self.start_server();
+        self.wait_for_server_ready().await;
 
         eprintln!("  Initial build completed in {:.0?}", start.elapsed());
 
@@ -131,7 +136,7 @@ impl RebuildManager {
     }
 
     /// Handle a batch of file changes (incremental rebuild).
-    pub fn handle_changes(&mut self, changes: Vec<ChangeKind>) -> RebuildResult {
+    pub async fn handle_changes(&mut self, changes: Vec<ChangeKind>) -> RebuildResult {
         let start = Instant::now();
         let mut changed_files = Vec::new();
         let mut needs_rediscover = false;
@@ -165,7 +170,7 @@ impl RebuildManager {
         }
 
         if needs_full_restart {
-            match self.full_rebuild() {
+            match self.full_rebuild().await {
                 Ok(_) => {
                     return RebuildResult {
                         success: true,
@@ -283,8 +288,8 @@ impl RebuildManager {
                 };
             }
 
-            // Cargo build (incremental)
-            if let Err(errors) = self.cargo_build() {
+            // Cargo build (incremental, async)
+            if let Err(errors) = self.cargo_build().await {
                 let _ = self.tx.send(DevMessage::Error {
                     errors: errors.clone(),
                 });
@@ -296,17 +301,21 @@ impl RebuildManager {
                 };
             }
 
-            // Restart server
+            // Restart server and wait for it to be ready
             self.kill_server();
             self.start_server();
+            self.wait_for_server_ready().await;
             let _ = self.tx.send(DevMessage::ErrorCleared);
             let _ = self.tx.send(DevMessage::Reload);
         } else if needs_css_only {
             // CSS-only change — regenerate Tailwind, no server restart
             let project_dir = self.app_dir.parent().unwrap_or(Path::new("."));
-            let _ = self
-                .compiler
-                .generate_css(project_dir, &self.app_dir, &self.output_dir, false);
+            if let Err(e) =
+                self.compiler
+                    .generate_css(project_dir, &self.app_dir, &self.output_dir, false)
+            {
+                eprintln!("  warning: CSS generation failed: {e}");
+            }
             let _ = self.tx.send(DevMessage::CssReload);
         }
 
@@ -319,10 +328,10 @@ impl RebuildManager {
     }
 
     /// Full rebuild (for config changes).
-    fn full_rebuild(&mut self) -> Result<(), Vec<DevError>> {
+    async fn full_rebuild(&mut self) -> Result<(), Vec<DevError>> {
         self.kill_server();
         self.compiler = Compiler::new();
-        self.initial_build()?;
+        self.initial_build().await?;
         let _ = self.tx.send(DevMessage::ErrorCleared);
         let _ = self.tx.send(DevMessage::Reload);
         Ok(())
@@ -345,14 +354,16 @@ impl RebuildManager {
         }
     }
 
-    /// Run `cargo build` in the output directory.
-    fn cargo_build(&self) -> Result<(), Vec<DevError>> {
-        let status = Command::new("cargo")
+    /// Run `cargo build` in the output directory (async — does not block
+    /// the tokio runtime, so the dev proxy and WebSocket hub stay alive).
+    async fn cargo_build(&self) -> Result<(), Vec<DevError>> {
+        let status = tokio::process::Command::new("cargo")
             .arg("build")
             .current_dir(&self.output_dir)
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
-            .status();
+            .status()
+            .await;
 
         match status {
             Ok(s) if s.success() => Ok(()),
@@ -375,6 +386,26 @@ impl RebuildManager {
                 suggestion: Some("Ensure Rust toolchain is installed".into()),
             }]),
         }
+    }
+
+    /// Wait for the backend server to accept connections on its port.
+    ///
+    /// Polls every 50ms, gives up after 15 seconds.  This ensures the
+    /// browser reload doesn't hit a 502 because the server hasn't bound
+    /// its port yet.
+    async fn wait_for_server_ready(&self) {
+        let addr = format!("127.0.0.1:{}", self.backend_port);
+        let deadline = Instant::now() + Duration::from_secs(15);
+        while Instant::now() < deadline {
+            if tokio::net::TcpStream::connect(&addr).await.is_ok() {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        eprintln!(
+            "  warning: backend server did not become ready on port {}",
+            self.backend_port
+        );
     }
 
     /// Start the generated server as a child process.

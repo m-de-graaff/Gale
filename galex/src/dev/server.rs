@@ -60,6 +60,8 @@ pub struct DevServerState {
     pub tx: broadcast::Sender<DevMessage>,
     /// Port where the generated backend server is running.
     pub backend_port: u16,
+    /// Shared HTTP client for proxying requests (reuses connections).
+    pub client: reqwest::Client,
 }
 
 /// Start the dev proxy server.
@@ -70,7 +72,15 @@ pub struct DevServerState {
 /// 3. Serves `/__gale_dev/overlay.css` — error overlay styles
 /// 4. Proxies everything else to `localhost:{backend_port}`
 pub async fn run_dev_server(port: u16, backend_port: u16, tx: broadcast::Sender<DevMessage>) {
-    let state = DevServerState { tx, backend_port };
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .build()
+        .unwrap_or_else(|_| reqwest::Client::new());
+    let state = DevServerState {
+        tx,
+        backend_port,
+        client,
+    };
 
     let app = Router::new()
         .route("/__gale_dev/ws", get(ws_handler))
@@ -157,13 +167,9 @@ async fn proxy_handler(
         }
     };
 
-    // Forward to backend via reqwest.
-    let client = reqwest::Client::builder()
-        .no_proxy()
-        .build()
-        .unwrap_or_else(|_| reqwest::Client::new());
-
-    let backend_resp = match client
+    // Forward to backend via the shared reqwest client.
+    let backend_resp = match state
+        .client
         .request(
             reqwest::Method::from_bytes(method.as_str().as_bytes()).unwrap(),
             &backend_url,

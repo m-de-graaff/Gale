@@ -46,7 +46,7 @@ pub async fn run_dev_server(app_dir: &Path, port: u16) -> Result<(), Box<dyn std
 
     let start = Instant::now();
     eprintln!("  Building...");
-    let routes = match manager.initial_build() {
+    let routes = match manager.initial_build().await {
         Ok(routes) => {
             let _ = tx.send(DevMessage::ErrorCleared);
             routes
@@ -92,7 +92,7 @@ pub async fn run_dev_server(app_dir: &Path, port: u16) -> Result<(), Box<dyn std
                 eprintln!();
                 eprintln!("  {summary}");
 
-                let result = manager.handle_changes(changes);
+                let result = manager.handle_changes(changes).await;
 
                 if result.success {
                     eprintln!(

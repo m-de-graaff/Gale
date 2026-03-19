@@ -2,7 +2,7 @@
   "name": "gale",
   "displayName": "Gale",
   "description": "Gale editor support for .gx files — syntax highlighting, diagnostics, snippets, and language server integration",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "publisher": "gale",
   "repository": {
     "type": "git",

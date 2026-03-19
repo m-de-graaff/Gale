@@ -50,10 +50,11 @@ pub fn generate_project(opts: &ScaffoldOptions) -> Result<(), std::io::Error> {
         std::fs::write(root.join("app").join("about").join("page.gx"), ABOUT_PAGE)?;
     }
 
-    // styles/global.css (if Tailwind)
+    // Tailwind setup: styles/global.css + package.json
     if opts.tailwind {
         std::fs::create_dir_all(root.join("styles"))?;
         std::fs::write(root.join("styles").join("global.css"), GLOBAL_CSS)?;
+        std::fs::write(root.join("package.json"), package_json(&opts.name))?;
     }
 
     // public/favicon.ico (placeholder)
@@ -79,6 +80,7 @@ name = "{}"
             r#"
 [tailwind]
 enabled = true
+input_css = "styles/global.css"
 "#,
         );
     }
@@ -171,6 +173,19 @@ const ABOUT_PAGE: &str = r#"out ui AboutPage {
   </main>
 }
 "#;
+
+fn package_json(name: &str) -> String {
+    format!(
+        r#"{{
+  "name": "{name}",
+  "private": true,
+  "devDependencies": {{
+    "@tailwindcss/cli": "^4"
+  }}
+}}
+"#
+    )
+}
 
 const GLOBAL_CSS: &str = r#"@import "tailwindcss";
 "#;
