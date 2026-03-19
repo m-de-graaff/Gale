@@ -78,9 +78,12 @@ impl ProjectFiles {
             }
 
             // Apply minification based on file extension.
+            // JS minification is disabled — the token-level minifier
+            // mangles exported names (breaking ES module imports),
+            // mishandles spread (...) as property access, and
+            // concatenates keywords.  CSS and Rust minifiers are safe.
             let ext = rel_path.extension().and_then(|e| e.to_str()).unwrap_or("");
             let minified = match ext {
-                "js" => crate::minify::js::minify_js(content),
                 "css" => crate::minify::css::minify_css(content),
                 "rs" => crate::minify::rust::minify_rs(content),
                 _ => content.clone(),

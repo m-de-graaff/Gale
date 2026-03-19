@@ -240,11 +240,18 @@ async fn proxy_handler(
         // gzip/br responses but leaves the original Content-Encoding header.
         // Forwarding it would make the browser try to decompress already-
         // decompressed bytes, producing garbage (blank page).
-        if key == "content-length" || key == "transfer-encoding" || key == "content-encoding" {
+        if key == "content-length"
+            || key == "transfer-encoding"
+            || key == "content-encoding"
+            || key == "cache-control"
+        {
             continue;
         }
         response = response.header(key, value);
     }
+    // Prevent browser from caching dev responses — stale CSS/JS from
+    // earlier broken builds can persist across server restarts.
+    response = response.header("cache-control", "no-store");
     response.body(final_body).unwrap()
 }
 

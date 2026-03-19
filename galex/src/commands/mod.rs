@@ -6,6 +6,7 @@ pub mod editor;
 pub mod fmt;
 pub mod lint_cmd;
 pub mod login;
+pub mod migrate;
 pub mod new;
 pub mod publish;
 pub mod remove;

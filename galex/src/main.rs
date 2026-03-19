@@ -116,6 +116,8 @@ enum Command {
     Login,
     /// Download and install the latest version of gale
     SelfUpdate,
+    /// Upgrade project to the current GaleX version
+    Migrate,
     /// Install or manage editor extensions
     Editor {
         #[command(subcommand)]
@@ -167,6 +169,7 @@ fn main() {
         Command::Publish => galex::commands::publish::run(),
         Command::Login => galex::commands::login::run(),
         Command::SelfUpdate => galex::commands::self_update::run(),
+        Command::Migrate => galex::commands::migrate::run(),
         Command::Editor { command } => match command {
             EditorCommand::Install { editor } => galex::commands::editor::run_install(&editor),
         },
