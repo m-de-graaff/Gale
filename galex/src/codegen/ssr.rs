@@ -340,6 +340,12 @@ fn emit_open_tag(
                     "html.push_str(\" data-gale-guard=\\\"{name}\\\"\");"
                 ));
             }
+            Directive::Bind { field, .. } => {
+                // Emit name="{field}" so FormData can collect the value.
+                // Critical for form:guard forms where the guard field name
+                // must match the input's name attribute.
+                e.writeln(&format!("html.push_str(\" name=\\\"{field}\\\"\");"));
+            }
             _ => {}
         }
     }

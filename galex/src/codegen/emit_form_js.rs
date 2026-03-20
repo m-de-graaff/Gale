@@ -94,10 +94,12 @@ pub fn emit_gale_forms_runtime() -> String {
     e.emit_comment("  validate  — function(data) => { ok, data?, errors? }");
     e.emit_comment("  sanitize  — function(data) => data (optional)");
     e.emit_comment("  fields    — string[] of field names for blur validation");
+    e.emit_comment("  onResult  — function(json) called with the server response (optional)");
     e.emit_export_fn("wireForm", &["form", "opts"], |e| {
         e.writeln("const validate = opts.validate;");
         e.writeln("const sanitize = opts.sanitize;");
         e.writeln("const fields = opts.fields;");
+        e.writeln("const onResult = opts.onResult || null;");
         e.newline();
 
         // ── Blur validation (per-field) ────────────────────────
@@ -118,18 +120,38 @@ pub fn emit_gale_forms_runtime() -> String {
         });
         e.newline();
 
-        // ── Submit validation (all fields) ─────────────────────
-        e.emit_comment("Submit validation: validate all fields before form submission.");
+        // ── Submit: always use fetch(), never native form POST ─
+        e.emit_comment("Submit: always preventDefault and POST via fetch with JSON.");
         e.writeln("form.addEventListener('submit', function(e) {");
         e.indent();
+        e.writeln("e.preventDefault();");
         e.writeln("clearErrors(form);");
         e.writeln("const raw = getFormData(form);");
         e.writeln("const data = sanitize ? sanitize(raw) : raw;");
         e.writeln("const result = validate(data);");
         e.emit_if("!result.ok", |e| {
-            e.writeln("e.preventDefault();");
             e.writeln("showErrors(form, result.errors);");
+            e.writeln("return;");
         });
+        e.writeln("const action = form.getAttribute('action');");
+        e.writeln("fetch(action, {");
+        e.indent();
+        e.writeln("method: 'POST',");
+        e.writeln("headers: { 'Content-Type': 'application/json' },");
+        e.writeln("body: JSON.stringify(data)");
+        e.dedent();
+        e.writeln("})");
+        e.writeln(".then(function(res) { return res.json(); })");
+        e.writeln(".then(function(json) {");
+        e.indent();
+        e.writeln("if (onResult) onResult(json);");
+        e.dedent();
+        e.writeln("})");
+        e.writeln(".catch(function(err) {");
+        e.indent();
+        e.writeln("console.error('Form action failed:', err);");
+        e.dedent();
+        e.writeln("});");
         e.dedent();
         e.writeln("});");
     });
@@ -178,12 +200,15 @@ pub fn emit_form_wiring_script(e: &mut RustEmitter, meta: &GuardJsMeta) {
     ));
     e.writeln("html.push_str(\"import { wireForm } from '/js/gale-forms.js';\");");
     e.writeln(&format!(
-        "html.push_str(\"wireForm(document.querySelector('[data-gale-guard=\\\\\\\"{guard_name}\\\\\\\"]'), {{\");",
+        "html.push_str(\"var __f=document.querySelector('[data-gale-guard=\\\\\\\"{guard_name}\\\\\\\"]');\");",
     ));
-    e.writeln(&format!("html.push_str(\"validate: {validate_fn},\");",));
-    e.writeln(&format!("html.push_str(\"sanitize: {sanitize_opt},\");",));
-    e.writeln(&format!("html.push_str(\"fields: {fields_literal}\");",));
-    e.writeln("html.push_str(\"}});\");");
+    e.writeln("html.push_str(\"if(__f)wireForm(__f,{\");");
+    e.writeln(&format!("html.push_str(\"validate:{validate_fn},\");",));
+    e.writeln(&format!("html.push_str(\"sanitize:{sanitize_opt},\");",));
+    e.writeln(&format!("html.push_str(\"fields:{fields_literal},\");",));
+    // Wire onResult to update the 'result' signal if it exists in the HMR registry.
+    e.writeln("html.push_str(\"onResult:function(j){if(window.__gale_signals__&&window.__gale_signals__.result)window.__gale_signals__.result.set(typeof j==='string'?j:JSON.stringify(j,null,2))}\");");
+    e.writeln("html.push_str(\"});\");");
     e.writeln("html.push_str(\"</script>\");");
 }
 
@@ -230,6 +255,10 @@ mod tests {
         let out = emit_gale_forms_runtime();
         assert!(out.contains("addEventListener('submit'"));
         assert!(out.contains("e.preventDefault()"));
+        // Must use fetch with JSON, not native form POST
+        assert!(out.contains("fetch(action"));
+        assert!(out.contains("'Content-Type': 'application/json'"));
+        assert!(out.contains("JSON.stringify(data)"));
     }
 
     #[test]
@@ -271,7 +300,7 @@ mod tests {
         let out = e.finish();
 
         assert!(out.contains("import { validateSignUp, sanitizeSignUp }"));
-        assert!(out.contains("sanitize: sanitizeSignUp"));
+        assert!(out.contains("sanitize:sanitizeSignUp"));
     }
 
     #[test]
@@ -287,7 +316,7 @@ mod tests {
         emit_form_wiring_script(&mut e, &meta);
         let out = e.finish();
 
-        assert!(out.contains("sanitize: null"));
+        assert!(out.contains("sanitize:null"));
     }
 
     #[test]
