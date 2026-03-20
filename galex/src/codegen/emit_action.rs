@@ -190,11 +190,13 @@ fn emit_handler_fn(
         // Action body — emit statements with return wrapping.
         // `return expr;` → `return Ok(Json(serde_json::json!(expr)));`
         e.emit_comment("--- Action body ---");
-        emit_action_body(e, &decl.body);
+        let has_explicit_return = emit_action_body(e, &decl.body);
 
-        // Default return (if body doesn't explicitly return)
-        e.newline();
-        e.writeln("Ok(Json(serde_json::json!(null)))");
+        // Default return (only if body doesn't explicitly return)
+        if !has_explicit_return {
+            e.newline();
+            e.writeln("Ok(Json(serde_json::json!(null)))");
+        }
     });
 }
 
@@ -202,10 +204,12 @@ fn emit_handler_fn(
 ///
 /// Action handlers return `Result<Json<Value>, ...>`, so bare `return val;`
 /// must become `return Ok(Json(serde_json::json!(val)));`.
-fn emit_action_body(e: &mut RustEmitter, block: &Block) {
+/// Returns `true` if the body ends with an explicit `return` statement.
+fn emit_action_body(e: &mut RustEmitter, block: &Block) -> bool {
     use crate::codegen::emit_expr::emit_expr;
     use crate::codegen::emit_stmt::emit_stmt;
 
+    let mut has_return = false;
     for stmt in &block.stmts {
         if let Stmt::Return {
             value: Some(expr), ..
@@ -215,10 +219,12 @@ fn emit_action_body(e: &mut RustEmitter, block: &Block) {
             e.write("return Ok(Json(serde_json::json!(");
             emit_expr(e, expr);
             e.writeln(")));");
+            has_return = true;
         } else {
             emit_stmt(e, stmt);
         }
     }
+    has_return
 }
 
 /// Find the first param whose type annotation references a known guard.

@@ -210,7 +210,7 @@ const DEFAULT_FORM_PAGE: &str = r#"guard PokemonSearch {
 
 server {
   action searchPokemon(data: PokemonSearch) -> string {
-    let response = await fetch("https://pokeapi.co/api/v2/pokemon/" + data.name)
+    let response = await fetch(`https://pokeapi.co/api/v2/pokemon/${data.name}`)
     return response
   }
 }
@@ -250,13 +250,12 @@ out ui FormPage {
         >
           Search
         </button>
-
-        when result != "" {
-          <div class="rounded-lg border border-zinc-800 bg-black p-4">
-            <pre class="text-xs text-zinc-400 whitespace-pre-wrap break-all max-h-64 overflow-y-auto">{result}</pre>
-          </div>
-        }
       </form>
+
+      <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-6 min-h-[4rem]">
+        <p class="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Result</p>
+        <pre class="text-xs text-zinc-400 whitespace-pre-wrap break-all max-h-64 overflow-y-auto">{result}</pre>
+      </div>
 
       <a href="/" class="inline-block text-sm text-zinc-500 hover:text-zinc-50 transition-colors">
         &larr; Back home
@@ -484,7 +483,8 @@ mod tests {
         assert!(DEFAULT_FORM_PAGE.contains("form:action={searchPokemon}"));
         assert!(DEFAULT_FORM_PAGE.contains("form:guard={PokemonSearch}"));
         assert!(DEFAULT_FORM_PAGE.contains("form:error field=\"name\""));
-        assert!(DEFAULT_FORM_PAGE.contains("await fetch("));
+        assert!(DEFAULT_FORM_PAGE.contains("await fetch(`"));
         assert!(DEFAULT_FORM_PAGE.contains("pokeapi.co"));
+        assert!(DEFAULT_FORM_PAGE.contains("signal result"));
     }
 }
