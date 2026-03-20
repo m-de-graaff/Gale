@@ -215,14 +215,12 @@ server {
   }
 }
 
-client {
-  signal result = ""
-}
-
 out ui FormPage {
   head {
     title: "Forms"
   }
+
+  signal result = ""
 
   <main class="min-h-screen flex items-center justify-center bg-black">
     <div class="w-full max-w-md px-8 py-24 space-y-8">

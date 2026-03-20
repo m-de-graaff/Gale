@@ -9,7 +9,7 @@
 use std::collections::HashSet;
 
 use crate::ast::*;
-use crate::codegen::emit_stmt::{annotation_to_rust, emit_block_body};
+use crate::codegen::emit_stmt::annotation_to_rust;
 use crate::codegen::rust_emitter::RustEmitter;
 use crate::codegen::types::{collect_shared_type_refs, to_module_name, to_snake_case};
 
@@ -187,14 +187,38 @@ fn emit_handler_fn(
             e.newline();
         }
 
-        // Action body
+        // Action body — emit statements with return wrapping.
+        // `return expr;` → `return Ok(Json(serde_json::json!(expr)));`
         e.emit_comment("--- Action body ---");
-        emit_block_body(e, &decl.body);
+        emit_action_body(e, &decl.body);
 
         // Default return (if body doesn't explicitly return)
         e.newline();
         e.writeln("Ok(Json(serde_json::json!(null)))");
     });
+}
+
+/// Emit the action body, wrapping `return expr;` in `Ok(Json(json!(...)))`.
+///
+/// Action handlers return `Result<Json<Value>, ...>`, so bare `return val;`
+/// must become `return Ok(Json(serde_json::json!(val)));`.
+fn emit_action_body(e: &mut RustEmitter, block: &Block) {
+    use crate::codegen::emit_expr::emit_expr;
+    use crate::codegen::emit_stmt::emit_stmt;
+
+    for stmt in &block.stmts {
+        if let Stmt::Return {
+            value: Some(expr), ..
+        } = stmt
+        {
+            // Wrap the return value for the Axum handler
+            e.write("return Ok(Json(serde_json::json!(");
+            emit_expr(e, expr);
+            e.writeln(")));");
+        } else {
+            emit_stmt(e, stmt);
+        }
+    }
 }
 
 /// Find the first param whose type annotation references a known guard.
@@ -239,9 +263,10 @@ fn pascal_case(name: &str) -> String {
 /// `String`, or an empty string on error.
 fn emit_fetch_wrapper(e: &mut RustEmitter) {
     e.writeln("/// HTTP fetch helper — wraps `gale_lib::http::get()`.");
+    e.writeln("/// Accepts `&str`, `String`, or any `AsRef<str>` type.");
     e.writeln("#[allow(dead_code)]");
-    e.block("async fn fetch(url: &str) -> String", |e| {
-        e.writeln("gale_lib::http::get(url).await.unwrap_or_default()");
+    e.block("async fn fetch(url: impl AsRef<str>) -> String", |e| {
+        e.writeln("gale_lib::http::get(url.as_ref()).await.unwrap_or_default()");
     });
 }
 
