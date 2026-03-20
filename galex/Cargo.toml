@@ -1,6 +1,6 @@
 [package]
 name = "galex"
-version = "0.2.14"
+version = "0.2.15"
 edition = "2021"
 description = "GaleX language lexer and compiler toolchain"
 license = "MIT/Apache-2.0"
@@ -44,7 +44,6 @@ semver = "1"
 dirs-next = "2"
 tower-lsp = "0.20"
 lsp-types = "0.94"
-tailwind-css = "0.9"
 
 [dev-dependencies]
 proptest = "1"
