@@ -303,6 +303,10 @@ impl RebuildManager {
                 eprintln!("  warning: CSS generation failed: {e}");
             }
 
+            // Kill the server BEFORE cargo build — on Windows, the running
+            // exe is locked by the OS and cargo can't overwrite it.
+            self.kill_server();
+
             // Cargo build (incremental, async)
             if let Err(errors) = self.cargo_build().await {
                 let _ = self.tx.send(DevMessage::Error {
@@ -317,7 +321,6 @@ impl RebuildManager {
             }
 
             // Restart server and wait for it to be ready
-            self.kill_server();
             self.start_server();
             self.wait_for_server_ready().await;
             let _ = self.tx.send(DevMessage::ErrorCleared);
