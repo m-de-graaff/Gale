@@ -424,10 +424,15 @@ fn emit_directive_instructions(
     for directive in directives {
         match directive {
             Directive::Bind { field, .. } => {
-                let id = *next_id;
-                *next_id += 1;
-                imports.insert("bind");
-                instructions.push((id, format!("el => bind(el, {field})")));
+                // Only emit bind() if the field name is a known signal.
+                // Guard fields (e.g. `bind:value={name}` inside form:guard)
+                // are handled by the form wiring system, not reactive bind().
+                if signal_names.contains(field.as_str()) {
+                    let id = *next_id;
+                    *next_id += 1;
+                    imports.insert("bind");
+                    instructions.push((id, format!("el => bind(el, {field})")));
+                }
             }
             Directive::On {
                 event,

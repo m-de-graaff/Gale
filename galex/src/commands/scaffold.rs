@@ -37,12 +37,8 @@ pub fn generate_project(opts: &ScaffoldOptions) -> std::io::Result<()> {
         TemplateChoice::ChatApp => write_chat_template(root, &opts.name)?,
     }
 
-    // Tailwind setup
-    if opts.tailwind {
-        std::fs::create_dir_all(root.join("styles"))?;
-        std::fs::write(root.join("styles").join("global.css"), GLOBAL_CSS)?;
-        std::fs::write(root.join("package.json"), package_json(&opts.name))?;
-    }
+    // Tailwind setup — pure Rust, no Node.js/npm needed
+    // (CSS is generated from AST class extraction at compile time)
 
     // public/favicon.ico (placeholder)
     std::fs::write(root.join("public").join("favicon.ico"), b"")?;
@@ -100,7 +96,6 @@ name = "{}"
             r#"
 [tailwind]
 enabled = true
-input_css = "styles/global.css"
 "#,
         );
     }
@@ -114,7 +109,6 @@ gale_build/
 target/
 
 # Dependencies
-node_modules/
 gale_modules/
 
 # Environment
@@ -421,22 +415,8 @@ fn chat_index(name: &str) -> String {
 
 // ── Shared files ───────────────────────────────────────────────────────
 
-fn package_json(name: &str) -> String {
-    format!(
-        r#"{{
-  "name": "{name}",
-  "private": true,
-  "devDependencies": {{
-    "@tailwindcss/cli": "^4"
-  }}
-}}
-"#
-    )
-}
-
-const GLOBAL_CSS: &str = r#"@import "tailwindcss";
-@source "../app/**/*.gx";
-"#;
+// package.json and node_modules are no longer needed.
+// Tailwind CSS is compiled in pure Rust via the `tailwind_css` crate.
 
 // ── Tests ──────────────────────────────────────────────────────────────
 

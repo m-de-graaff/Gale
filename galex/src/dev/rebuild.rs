@@ -462,6 +462,10 @@ impl RebuildManager {
             // If the backend compresses, the proxy passes through raw
             // brotli/gzip bytes → garbled CSS/JS in the browser.
             .env("GALE_COMPRESSION_ENABLED", "false")
+            // Relax CSP for dev mode — inline <script> tags are used by
+            // form wiring and hydration.  Production builds should use
+            // a strict CSP with nonces.
+            .env("GALE_CSP", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'")
             // Keep request logs (info level) visible while suppressing
             // the startup "listening addr=..." message (logged at debug
             // after our change to server.rs).

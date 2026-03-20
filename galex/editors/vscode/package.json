@@ -2,7 +2,7 @@
   "name": "gale",
   "displayName": "Gale",
   "description": "Gale editor support for .gx files — syntax highlighting, diagnostics, snippets, and language server integration",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "publisher": "gale",
   "repository": {
     "type": "git",
@@ -31,7 +31,11 @@
         "extensions": [
           ".gx"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/gx-light.svg",
+          "dark": "./icons/gx-dark.svg"
+        }
       }
     ],
     "grammars": [
@@ -47,16 +51,72 @@
         "path": "./snippets/gale.json"
       }
     ],
+    "commands": [
+      {
+        "command": "gale.restartServer",
+        "title": "Restart Language Server",
+        "category": "GaleX"
+      },
+      {
+        "command": "gale.showOutput",
+        "title": "Show Language Server Output",
+        "category": "GaleX"
+      }
+    ],
     "configuration": {
       "title": "Gale",
       "properties": {
         "gale.lspPath": {
           "type": "string",
           "default": "gale-lsp",
-          "description": "Path to the gale-lsp binary"
+          "description": "Path to the gale-lsp binary. Set to an absolute path if not on PATH.",
+          "scope": "machine-overridable"
+        },
+        "gale.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Trace communication between VS Code and the GaleX language server.",
+          "scope": "window"
+        },
+        "gale.formatting.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable document formatting via the language server.",
+          "scope": "resource"
+        },
+        "gale.diagnostics.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inline diagnostics (errors, warnings, hints).",
+          "scope": "resource"
         }
       }
-    }
+    },
+    "semanticTokenScopes": [
+      {
+        "language": "gale",
+        "scopes": {
+          "namespace": ["entity.name.namespace.gale"],
+          "type": ["entity.name.type.gale"],
+          "class": ["entity.name.type.component.gale"],
+          "enum": ["entity.name.type.enum.gale"],
+          "interface": ["entity.name.type.interface.gale"],
+          "struct": ["entity.name.type.guard.gale"],
+          "parameter": ["variable.parameter.gale"],
+          "variable": ["variable.other.gale"],
+          "property": ["variable.other.property.gale"],
+          "function": ["entity.name.function.gale"],
+          "method": ["entity.name.function.method.gale"],
+          "macro": ["entity.other.attribute-name.directive.gale"],
+          "decorator": ["entity.name.function.validator.gale"]
+        }
+      }
+    ]
   },
   "scripts": {
     "compile": "tsc -p ./",

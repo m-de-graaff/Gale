@@ -326,9 +326,9 @@ fn emit_open_tag(
                 action: Expr::Ident { name, .. },
                 ..
             } => {
-                let action_path = to_snake_case(name);
+                // Must match the server route: /api/__gx/actions/{originalName}
                 e.writeln(&format!(
-                    "html.push_str(\" action=\\\"/api/{action_path}\\\" method=\\\"post\\\"\");"
+                    "html.push_str(\" action=\\\"/api/__gx/actions/{name}\\\" method=\\\"post\\\"\");"
                 ));
             }
             Directive::FormGuard {

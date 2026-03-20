@@ -2,7 +2,8 @@
 //!
 //! Communicates via stdin/stdout JSON-RPC (LSP protocol).
 //! Provides diagnostics, autocomplete, hover, go-to-definition,
-//! references, rename, code actions, formatting, symbols, and folding.
+//! references, rename, code actions, formatting, symbols, folding,
+//! and semantic tokens.
 
 use std::sync::Mutex;
 
@@ -15,7 +16,9 @@ use galex::lsp::diagnostics;
 use galex::lsp::document::DocumentManager;
 use galex::lsp::goto;
 use galex::lsp::hover;
+use galex::lsp::position as pos_util;
 use galex::lsp::quickfix;
+use galex::lsp::semantic_tokens;
 use galex::lsp::symbols;
 
 struct GaleLsp {
@@ -46,15 +49,23 @@ impl LanguageServer for GaleLsp {
                 references_provider: Some(OneOf::Left(true)),
                 rename_provider: Some(OneOf::Left(true)),
                 code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
-                // Formatting disabled — the AST-based printer has
-                // correctness issues (drops parens, strips comments).
-                document_formatting_provider: Some(OneOf::Left(false)),
+                document_formatting_provider: Some(OneOf::Left(true)),
                 document_symbol_provider: Some(OneOf::Left(true)),
                 folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
                 signature_help_provider: Some(SignatureHelpOptions {
                     trigger_characters: Some(vec!["(".into(), ",".into()]),
                     ..Default::default()
                 }),
+                semantic_tokens_provider: Some(
+                    SemanticTokensServerCapabilities::SemanticTokensOptions(
+                        SemanticTokensOptions {
+                            legend: semantic_tokens::legend(),
+                            full: Some(SemanticTokensFullOptions::Bool(true)),
+                            range: None,
+                            ..Default::default()
+                        },
+                    ),
+                ),
                 ..Default::default()
             },
             ..Default::default()
@@ -113,9 +124,20 @@ impl LanguageServer for GaleLsp {
             .await;
     }
 
-    async fn completion(&self, _params: CompletionParams) -> Result<Option<CompletionResponse>> {
+    async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {
         let docs = self.documents.lock().unwrap();
-        let items = completions::provide_completions(&docs);
+        let uri = &params.text_document_position.text_document.uri;
+        let pos = params.text_document_position.position;
+        let source = match docs.get_source(uri) {
+            Some(s) => s,
+            None => return Ok(None),
+        };
+        let offset = pos_util::position_to_offset(source, pos);
+        let trigger = params
+            .context
+            .as_ref()
+            .and_then(|c| c.trigger_character.as_deref());
+        let items = completions::provide_completions(&docs, uri, source, offset, trigger);
         Ok(Some(CompletionResponse::Array(items)))
     }
 
@@ -131,8 +153,8 @@ impl LanguageServer for GaleLsp {
             Some(s) => s,
             None => return Ok(None),
         };
-        let offset = position_to_offset(source, pos);
-        Ok(hover::provide_hover(&docs, file_id, offset))
+        let offset = pos_util::position_to_offset(source, pos);
+        Ok(hover::provide_hover(&docs, file_id, offset, source))
     }
 
     async fn goto_definition(
@@ -150,7 +172,7 @@ impl LanguageServer for GaleLsp {
             Some(s) => s,
             None => return Ok(None),
         };
-        let offset = position_to_offset(source, pos);
+        let offset = pos_util::position_to_offset(source, pos);
         Ok(goto::goto_definition(&docs, uri, file_id, offset).map(GotoDefinitionResponse::Scalar))
     }
 
@@ -166,7 +188,7 @@ impl LanguageServer for GaleLsp {
             Some(s) => s,
             None => return Ok(None),
         };
-        let offset = position_to_offset(source, pos);
+        let offset = pos_util::position_to_offset(source, pos);
         let refs = goto::find_references(&docs, file_id, offset);
         Ok(if refs.is_empty() { None } else { Some(refs) })
     }
@@ -183,7 +205,7 @@ impl LanguageServer for GaleLsp {
             Some(s) => s,
             None => return Ok(None),
         };
-        let offset = position_to_offset(source, pos);
+        let offset = pos_util::position_to_offset(source, pos);
         Ok(goto::rename_symbol(
             &docs,
             file_id,
@@ -244,6 +266,23 @@ impl LanguageServer for GaleLsp {
         };
         Ok(Some(symbols::folding_ranges(ast, source)))
     }
+
+    async fn semantic_tokens_full(
+        &self,
+        params: SemanticTokensParams,
+    ) -> Result<Option<SemanticTokensResult>> {
+        let docs = self.documents.lock().unwrap();
+        let uri = &params.text_document.uri;
+        let source = match docs.get_source(uri) {
+            Some(s) => s,
+            None => return Ok(None),
+        };
+        let tokens = semantic_tokens::provide_semantic_tokens(&docs, source);
+        Ok(Some(SemanticTokensResult::Tokens(SemanticTokens {
+            result_id: None,
+            data: tokens,
+        })))
+    }
 }
 
 impl GaleLsp {
@@ -262,18 +301,6 @@ impl GaleLsp {
             source,
         )
     }
-}
-
-/// Convert an LSP Position (line, character) to a byte offset in the source.
-fn position_to_offset(source: &str, pos: Position) -> u32 {
-    let mut offset = 0u32;
-    for (line_idx, line) in source.lines().enumerate() {
-        if line_idx == pos.line as usize {
-            return offset + pos.character.min(line.len() as u32);
-        }
-        offset += line.len() as u32 + 1; // +1 for newline
-    }
-    offset
 }
 
 #[tokio::main]

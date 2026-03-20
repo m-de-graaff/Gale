@@ -507,7 +507,9 @@ mod tests {
             &guards(&[]),
         );
         assert!(out.contains("let result = (x * 2_i64);"));
-        assert!(out.contains("return serde_json::json!({\"answer\": result});"));
+        assert!(out.contains(
+            "return Ok(Json(serde_json::json!(serde_json::json!({\"answer\": result}))));"
+        ));
     }
 
     #[test]

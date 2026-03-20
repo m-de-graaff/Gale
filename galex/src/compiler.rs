@@ -330,15 +330,9 @@ impl Compiler {
         let safelist = crate::tailwind::extract::generate_safelist(&self.programs);
         let output_css = output_dir.join("public/_gale/styles.css");
 
-        crate::tailwind::generate::run_tailwind_cli(
-            &tw_config,
-            app_dir,
-            &safelist,
-            &output_css,
-            minify,
-        )
-        .map(|_| true)
-        .map_err(|e| e.to_string())
+        crate::tailwind::generate::run_tailwind(&tw_config, app_dir, &safelist, &output_css, minify)
+            .map(|_| true)
+            .map_err(|e| e.to_string())
     }
 
     /// Load all installed packages from `gale_modules/`.

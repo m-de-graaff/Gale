@@ -826,6 +826,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "css-color"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42aaeae719fd78ce501d77c6cdf01f7e96f26bcd5617a4903a1c2b97e388543a"
+
+[[package]]
 name = "dashmap"
 version = "5.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1217,7 +1223,7 @@ dependencies = [
 
 [[package]]
 name = "gale"
-version = "0.2.13"
+version = "0.2.14"
 dependencies = [
  "axum",
  "axum-server",
@@ -1258,7 +1264,7 @@ dependencies = [
 
 [[package]]
 name = "galex"
-version = "0.2.13"
+version = "0.2.14"
 dependencies = [
  "axum",
  "clap",
@@ -1281,6 +1287,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "smol_str",
+ "tailwind-css",
  "tar",
  "tempfile",
  "tokio",
@@ -2976,6 +2983,39 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "tailwind-ast"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac41127bfd988693b7beaa0a49de45bd452ebeb3bafec2387a4de25bdca6420e"
+dependencies = [
+ "nom",
+]
+
+[[package]]
+name = "tailwind-css"
+version = "0.9.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d4aaf0d0b072dc057404ec7515c57a358ddee2c3042f20d0f2646a95a6b5302"
+dependencies = [
+ "css-color",
+ "log",
+ "nom",
+ "tailwind-ast",
+ "tailwind-error",
+]
+
+[[package]]
+name = "tailwind-error"
+version = "1.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fec7bc7832f9ab2b1416bb2088e06cbf9e19252915821338948bf5bd031b1fc"
+dependencies = [
+ "css-color",
+ "nom",
+ "url",
 ]
 
 [[package]]

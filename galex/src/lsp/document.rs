@@ -164,6 +164,16 @@ impl DocumentManager {
         self.documents.keys().cloned().collect()
     }
 
+    /// Get the source text for a file by its file ID.
+    ///
+    /// Looks up the path from the file table, converts to URI, and checks
+    /// open documents. Returns `None` if the file is not currently open.
+    pub fn get_source_by_file_id(&self, file_id: u32) -> Option<&str> {
+        let path = self.file_table.get_path(file_id)?;
+        let uri = Url::from_file_path(path).ok()?;
+        self.get_source(&uri)
+    }
+
     fn invalidate_cache(&mut self) {
         self.cached_merged = None;
         self.cached_checker = None;

@@ -11,4 +11,5 @@ pub mod goto;
 pub mod hover;
 pub mod position;
 pub mod quickfix;
+pub mod semantic_tokens;
 pub mod symbols;

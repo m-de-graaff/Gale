@@ -691,7 +691,7 @@ fn form_action_ssr() {
     ssr::emit_template_nodes(&mut e, &nodes, &mut h, None);
     let output = e.finish();
     assert!(
-        output.contains("/api/create_user"),
+        output.contains("/api/__gx/actions/createUser"),
         "should generate action URL: {output}"
     );
     assert!(
