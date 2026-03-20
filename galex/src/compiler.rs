@@ -398,8 +398,8 @@ impl Compiler {
         for path in paths {
             if path.exists() {
                 if let Ok(source) = std::fs::read_to_string(path) {
-                    // Find existing file_id or add new
-                    let file_id = self.file_table.add_file(path.clone());
+                    // Reuse existing file_id to avoid duplicate entries
+                    let file_id = self.file_table.find_or_add_file(path.clone());
                     self.sources.insert(file_id, source);
                 }
             }
