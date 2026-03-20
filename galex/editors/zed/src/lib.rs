@@ -7,7 +7,7 @@ struct GaleExtension {
 
 impl GaleExtension {
     /// Returns the platform-specific asset name for GitHub releases.
-    fn platform_asset_name() -> Result<String, String> {
+    fn platform_asset_name() -> std::result::Result<String, String> {
         let (os, arch) = zed::current_platform();
         let os_str = match os {
             zed::Os::Linux => "unknown-linux-musl",
@@ -121,6 +121,30 @@ impl zed::Extension for GaleExtension {
             args: vec![],
             env: Default::default(),
         })
+    }
+
+    fn language_server_initialization_options(
+        &mut self,
+        _language_server_id: &LanguageServerId,
+        _worktree: &zed::Worktree,
+    ) -> Result<Option<zed::serde_json::Value>> {
+        Ok(Some(zed::serde_json::json!({
+            "diagnostics": { "enabled": true },
+            "formatting": { "enabled": true },
+            "completion": { "snippets": true },
+            "semanticTokens": { "enabled": true }
+        })))
+    }
+
+    fn language_server_workspace_configuration(
+        &mut self,
+        _language_server_id: &LanguageServerId,
+        worktree: &zed::Worktree,
+    ) -> Result<Option<zed::serde_json::Value>> {
+        let settings = zed::settings::LspSettings::for_worktree("gale-lsp", worktree)
+            .ok()
+            .and_then(|s| s.settings);
+        Ok(settings)
     }
 }
 

@@ -1,9 +1,9 @@
 id = "gale"
 name = "Gale"
-version = "0.1.0"
+version = "0.2.0"
 schema_version = 1
 authors = ["Gale Team"]
-description = "Gale language support for Zed — syntax highlighting and LSP"
+description = "GaleX language support — syntax highlighting, diagnostics, completions, hover, go-to-definition, references, rename, code actions, formatting, outline, and folding via gale-lsp"
 repository = "https://github.com/m-de-graaff/Gale"
 
 [grammars.gale]

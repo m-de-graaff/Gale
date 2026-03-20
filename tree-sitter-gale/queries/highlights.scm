@@ -1,34 +1,211 @@
 ; GaleX Tree-sitter highlight queries
-; Aligned with the tree-sitter-gale grammar.js node types.
+;
+; Canonical copy lives at: galex/editors/zed/languages/gale/highlights.scm
+; This file is kept in sync for tree-sitter CLI testing (tree-sitter highlight).
+;
+; More specific patterns must appear BEFORE generic ones — tree-sitter
+; applies the first match.
 
-; ── Keywords ──────────────────────────────────────────────────
+; ══════════════════════════════════════════════════════════════
+; DECLARATIONS — specific names get definition captures
+; ══════════════════════════════════════════════════════════════
 
-; Binding keywords
-["let" "mut" "signal" "derive" "frozen" "ref"] @keyword
+(guard_declaration
+  "guard" @keyword.type
+  name: (type_identifier) @type.definition)
 
-; Function & control keywords
-["fn" "return" "if" "else" "for" "await" "in"] @keyword
+(guard_field
+  name: (identifier) @property.definition)
 
-; Boundary keywords
-["server" "client" "shared"] @keyword
+(validator_call
+  "." @punctuation.delimiter
+  (identifier) @function.method)
 
-; Declaration keywords
-["guard" "action" "query" "store" "channel"
- "type" "enum" "test" "middleware" "env"] @keyword
+(store_declaration
+  "store" @keyword.type
+  name: (type_identifier) @type.definition)
 
-; Reactivity keywords
-["effect" "watch" "bind"] @keyword
+(enum_declaration
+  "enum" @keyword.type
+  name: (type_identifier) @type.definition)
 
-; Template control flow
-["when" "each" "suspend" "slot" "empty"] @keyword
+(type_alias_declaration
+  "type" @keyword.type
+  name: (type_identifier) @type.definition)
 
-; Module keywords
-["use" "out" "ui" "api" "layout" "from"] @keyword
+(component_declaration
+  "ui" @keyword.modifier
+  name: (type_identifier) @type.definition)
 
-; Other keywords
-["head" "redirect" "link" "transition" "on" "assert"] @keyword
+(layout_declaration
+  "layout" @keyword.modifier
+  name: (type_identifier) @type.definition)
 
-; ── Literals ──────────────────────────────────────────────────
+(api_declaration
+  "api" @keyword.modifier
+  name: (type_identifier) @type.definition)
+
+(api_handler
+  method: (identifier) @function.method)
+
+(function_declaration
+  "fn" @keyword.function
+  name: (identifier) @function.definition)
+
+(action_declaration
+  "action" @keyword.function
+  name: (identifier) @function.definition)
+
+(middleware_declaration
+  "middleware" @keyword.function
+  name: (identifier) @function.definition)
+
+(channel_declaration
+  "channel" @keyword.type
+  name: (identifier) @function.definition)
+
+(channel_handler
+  "on" @keyword
+  event: (identifier) @property)
+
+(query_declaration
+  "query" @keyword.type
+  name: (identifier) @function.definition)
+
+(test_declaration
+  "test" @keyword
+  name: (string_literal) @string)
+
+(env_declaration "env" @keyword.type)
+
+(boundary_block
+  boundary: _ @keyword.modifier)
+
+; ══════════════════════════════════════════════════════════════
+; STATEMENTS
+; ══════════════════════════════════════════════════════════════
+
+(signal_statement
+  "signal" @keyword.declaration
+  name: (identifier) @variable.special)
+
+(derive_statement
+  "derive" @keyword.declaration
+  name: (identifier) @variable.special)
+
+(let_statement
+  name: (identifier) @variable.definition)
+
+(frozen_statement
+  "frozen" @keyword.declaration
+  name: (identifier) @variable.definition)
+
+(ref_statement
+  "ref" @keyword.declaration
+  name: (identifier) @variable.definition)
+
+(parameter
+  name: (identifier) @variable.parameter)
+
+(for_statement
+  "for" @keyword.control
+  binding: (identifier) @variable.definition
+  "in" @keyword.control)
+
+(each_block
+  "each" @keyword.control
+  binding: (identifier) @variable.definition
+  "in" @keyword.control)
+
+(return_statement "return" @keyword.return)
+
+(assert_statement "assert" @keyword)
+
+(assignment_statement
+  ["=" "+=" "-="] @operator)
+
+; ══════════════════════════════════════════════════════════════
+; EXPRESSIONS
+; ══════════════════════════════════════════════════════════════
+
+(call_expression
+  callee: (identifier) @function.call)
+
+(call_expression
+  callee: (member_expression
+    property: (identifier) @function.method.call))
+
+(member_expression
+  property: (identifier) @property)
+
+(optional_chain_expression
+  "?." @operator
+  (identifier) @property)
+
+(await_expression "await" @keyword.coroutine)
+(spread_expression "..." @operator)
+(arrow_function "=>" @operator)
+(binary_expression operator: (_) @operator)
+(pipe_expression "|>" @operator)
+(ternary_expression "?" @operator ":" @operator)
+
+; ══════════════════════════════════════════════════════════════
+; TEMPLATE / HTML
+; ══════════════════════════════════════════════════════════════
+
+(element tag: (tag_name) @tag)
+(self_closing_element tag: (tag_name) @tag)
+(element (tag_name) @tag)
+
+(attribute name: (attribute_name) @attribute)
+(directive name: (directive_name) @attribute.special)
+
+(expression_interpolation
+  "{" @punctuation.special
+  "}" @punctuation.special)
+
+(head_field key: (identifier) @property)
+(slot_node "slot" @tag)
+
+; ══════════════════════════════════════════════════════════════
+; IMPORTS
+; ══════════════════════════════════════════════════════════════
+
+(use_declaration "use" @keyword.import "from" @keyword.import)
+(use_declaration (identifier) @variable)
+(use_declaration (string_literal) @string.special.path)
+
+; ══════════════════════════════════════════════════════════════
+; TYPES
+; ══════════════════════════════════════════════════════════════
+
+(type_identifier) @type
+(generic_type (type_identifier) @type "<" @punctuation.bracket ">" @punctuation.bracket)
+(array_type "[" @punctuation.bracket "]" @punctuation.bracket)
+(union_type "|" @operator)
+(function_type "->" @operator)
+(type_field name: (identifier) @property "?" @operator)
+(object_field key: (identifier) @property)
+
+; ══════════════════════════════════════════════════════════════
+; KEYWORDS (generic fallback)
+; ══════════════════════════════════════════════════════════════
+
+["let" "mut"] @keyword.declaration
+["if" "else" "when" "each" "suspend" "empty"] @keyword.control
+["guard" "action" "query" "store" "channel" "type" "enum" "test" "middleware" "env"] @keyword.type
+["fn"] @keyword.function
+["effect" "watch"] @keyword
+["server" "client" "shared"] @keyword.modifier
+["use" "out" "from"] @keyword.import
+["head" "redirect" "link" "transition" "on" "bind"
+ "signal" "derive" "frozen" "ref"
+ "ui" "api" "layout"
+ "slot" "await" "assert"] @keyword
+
+; ══════════════════════════════════════════════════════════════
+; LITERALS
+; ══════════════════════════════════════════════════════════════
 
 (string_literal) @string
 (string_content) @string
@@ -39,84 +216,29 @@
 (null_literal) @constant.builtin
 (template_literal) @string
 (template_content) @string
-(template_substitution
-  "${" @punctuation.special
-  "}" @punctuation.special)
+(template_substitution "${" @punctuation.special "}" @punctuation.special)
 (regex_literal) @string.regex
 
-; ── Comments ──────────────────────────────────────────────────
+; ══════════════════════════════════════════════════════════════
+; COMMENTS
+; ══════════════════════════════════════════════════════════════
 
 (line_comment) @comment
 (block_comment) @comment
 
-; ── Types ─────────────────────────────────────────────────────
-
-(type_identifier) @type
-(generic_type (type_identifier) @type)
-(union_type "|" @operator)
-
-; Declaration names that are types
-(guard_declaration name: (type_identifier) @type)
-(store_declaration name: (type_identifier) @type)
-(enum_declaration name: (type_identifier) @type)
-(component_declaration name: (type_identifier) @type)
-(layout_declaration name: (type_identifier) @type)
-(api_declaration name: (type_identifier) @type)
-(type_alias_declaration name: (type_identifier) @type)
-
-; ── Functions ─────────────────────────────────────────────────
-
-(function_declaration name: (identifier) @function)
-(action_declaration name: (identifier) @function)
-(middleware_declaration name: (identifier) @function)
-(call_expression callee: (identifier) @function)
-(call_expression callee: (member_expression property: (identifier) @function))
-(validator_call (identifier) @function)
-
-; ── Variables ─────────────────────────────────────────────────
-
-(signal_statement name: (identifier) @variable.special)
-(derive_statement name: (identifier) @variable.special)
-(let_statement name: (identifier) @variable)
-(frozen_statement name: (identifier) @variable)
-(ref_statement name: (identifier) @variable)
-(parameter name: (identifier) @variable.parameter)
-(for_statement binding: (identifier) @variable)
-(each_block binding: (identifier) @variable)
-
-; Query & channel names
-(query_declaration name: (identifier) @function)
-(channel_declaration name: (identifier) @function)
-(channel_handler event: (identifier) @property)
-
-; Test names
-(test_declaration name: (string_literal) @string)
-
-; ── HTML / Template ───────────────────────────────────────────
-
-(element tag: (tag_name) @tag)
-(self_closing_element tag: (tag_name) @tag)
-(element (tag_name) @tag)
-
-(attribute name: (attribute_name) @attribute)
-(directive name: (directive_name) @attribute)
-
-; Head block fields
-(head_field key: (identifier) @property)
-
-; ── Operators ─────────────────────────────────────────────────
+; ══════════════════════════════════════════════════════════════
+; OPERATORS & PUNCTUATION
+; ══════════════════════════════════════════════════════════════
 
 (operator) @operator
+["=>" "->" "<->" "|>" ".." "..." "=" "+=" "-=" "!" "?" "?."] @operator
 
-["=>" "->" "<->" "|>" ".." "..."
- "=" "+=" "-="
- "!" "?" "?."] @operator
-
-; ── Punctuation ───────────────────────────────────────────────
-
-["{" "}" "(" ")" "[" "]" "<" ">" "</" "/>"] @punctuation.bracket
+["{" "}" "(" ")" "[" "]"] @punctuation.bracket
+["<" ">" "</" "/>"] @punctuation.bracket
 ["," "." ":" ";"] @punctuation.delimiter
 
-; ── Identifiers (fallback) ────────────────────────────────────
+; ══════════════════════════════════════════════════════════════
+; IDENTIFIERS (fallback — must be last)
+; ══════════════════════════════════════════════════════════════
 
 (identifier) @variable

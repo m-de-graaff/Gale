@@ -366,7 +366,7 @@ impl<'a> CodegenContext<'a> {
                     let mut js_emitter = js_emitter::JsEmitter::new();
                     let meta = emit_guard_js::emit_guard_js_file(&mut js_emitter, decl);
                     self.files.add_file(
-                        format!("static/js/guards/{}.js", meta.module_name),
+                        format!("public/js/guards/{}.js", meta.module_name),
                         js_emitter.finish(),
                     );
                     self.js_guard_meta.push(meta);
@@ -674,7 +674,7 @@ impl<'a> CodegenContext<'a> {
         // Emit the gale-forms.js runtime if any guards exist
         if self.has_guards {
             self.files.add_file(
-                "static/js/gale-forms.js",
+                "public/js/gale-forms.js",
                 emit_form_js::emit_gale_forms_runtime(),
             );
         }

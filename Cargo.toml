@@ -3,7 +3,7 @@ members = ["galex", "gale-registry"]
 
 [package]
 name = "gale"
-version = "0.2.15"
+version = "0.2.16"
 edition = "2021"
 description = "A fast, minimal, and secure static web server"
 license = "MIT/Apache-2.0"
