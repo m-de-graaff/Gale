@@ -157,7 +157,7 @@ impl TypeChecker {
 
         for directive in directives {
             match directive {
-                Directive::Bind { field, span } => {
+                Directive::Bind { field, span, .. } => {
                     self.check_bind_directive(field, tag, *span);
                 }
 

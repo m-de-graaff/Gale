@@ -223,11 +223,17 @@ fn emit_open_tag(
     // Collect hydration markers from interactive directives
     let mut hydration_ids = Vec::new();
     let mut class_toggles = Vec::new();
+    let mut extra_name_attr: Option<String> = None;
 
     for directive in directives {
         match directive {
-            Directive::Bind { field, .. } => {
+            Directive::Bind { field, expr, .. } => {
                 hydration_ids.push(hydration.mark_bind(field));
+                // Emit name="{source}" so FormData collects the value
+                // under the correct field name (e.g. guard field "name").
+                if let Some(Expr::Ident { name, .. }) = expr.as_deref() {
+                    extra_name_attr = Some(name.to_string());
+                }
             }
             Directive::On {
                 event, modifiers, ..
@@ -340,14 +346,13 @@ fn emit_open_tag(
                     "html.push_str(\" data-gale-guard=\\\"{name}\\\"\");"
                 ));
             }
-            Directive::Bind { field, .. } => {
-                // Emit name="{field}" so FormData can collect the value.
-                // Critical for form:guard forms where the guard field name
-                // must match the input's name attribute.
-                e.writeln(&format!("html.push_str(\" name=\\\"{field}\\\"\");"));
-            }
             _ => {}
         }
+    }
+
+    // Name attribute from bind:value={expr} — needed for FormData collection
+    if let Some(ref name) = extra_name_attr {
+        e.writeln(&format!("html.push_str(\" name=\\\"{name}\\\"\");"));
     }
 
     // Hydration markers

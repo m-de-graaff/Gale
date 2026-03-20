@@ -133,8 +133,21 @@ impl<'src> Parser<'src> {
                 Token::BindDir(field) => {
                     let span = self.peek_span();
                     self.advance();
+                    // Consume ={expr} — the source signal/variable name.
+                    let expr = if self.eat(&Token::Eq).is_some() {
+                        if self.eat(&Token::ExprOpen).is_some() {
+                            let e = self.parse_expr();
+                            self.expect(&Token::ExprClose, "`}`");
+                            Some(Box::new(e))
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    };
                     directives.push(Directive::Bind {
                         field: field.into(),
+                        expr,
                         span,
                     });
                 }

@@ -580,6 +580,7 @@ fn hydration_marker_on_bind() {
         attributes: vec![],
         directives: vec![Directive::Bind {
             field: "name".into(),
+            expr: None,
             span: s(),
         }],
         span: s(),

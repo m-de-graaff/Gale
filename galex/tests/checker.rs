@@ -470,6 +470,7 @@ fn bind_directive_requires_signal() {
                 attributes: vec![],
                 directives: vec![Directive::Bind {
                     field: "name".into(),
+                    expr: None,
                     span: s(),
                 }],
                 span: s(),
@@ -502,6 +503,7 @@ fn bind_directive_with_signal_ok() {
                 attributes: vec![],
                 directives: vec![Directive::Bind {
                     field: "name".into(),
+                    expr: None,
                     span: s(),
                 }],
                 span: s(),
@@ -2336,6 +2338,7 @@ fn bind_signal_compatible_type_ok() {
                 attributes: vec![],
                 directives: vec![Directive::Bind {
                     field: "name".into(),
+                    expr: None,
                     span: s(),
                 }],
                 span: s(),
@@ -2373,6 +2376,7 @@ fn bind_non_signal_errors() {
                 attributes: vec![],
                 directives: vec![Directive::Bind {
                     field: "name".into(),
+                    expr: None,
                     span: s(),
                 }],
                 span: s(),
@@ -5152,6 +5156,7 @@ fn component_with_signals_binds_and_events() {
                     directives: vec![
                         Directive::Bind {
                             field: "name".into(),
+                            expr: None,
                             span: s(),
                         },
                         Directive::On {

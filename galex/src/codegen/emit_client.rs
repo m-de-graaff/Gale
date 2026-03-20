@@ -423,15 +423,21 @@ fn emit_directive_instructions(
 ) {
     for directive in directives {
         match directive {
-            Directive::Bind { field, .. } => {
-                // Only emit bind() if the field name is a known signal.
+            Directive::Bind { field, expr, .. } => {
+                // Determine the signal name from the expression (bind:value={name})
+                // or fall back to the field name for backward compat (bind:count).
+                let signal_name = match expr.as_deref() {
+                    Some(Expr::Ident { name, .. }) => name.as_str(),
+                    _ => field.as_str(),
+                };
+                // Only emit bind() if the source is a known signal.
                 // Guard fields (e.g. `bind:value={name}` inside form:guard)
                 // are handled by the form wiring system, not reactive bind().
-                if signal_names.contains(field.as_str()) {
+                if signal_names.contains(signal_name) {
                     let id = *next_id;
                     *next_id += 1;
                     imports.insert("bind");
-                    instructions.push((id, format!("el => bind(el, {field})")));
+                    instructions.push((id, format!("el => bind(el, {signal_name})")));
                 }
             }
             Directive::On {

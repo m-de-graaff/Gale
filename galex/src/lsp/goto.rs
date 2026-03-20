@@ -644,7 +644,7 @@ fn collect_refs_in_directives(
 ) {
     for dir in directives {
         match dir {
-            Directive::Bind { field, span } => {
+            Directive::Bind { field, span, .. } => {
                 if field == target {
                     add_span_location(*span, docs, locations);
                 }

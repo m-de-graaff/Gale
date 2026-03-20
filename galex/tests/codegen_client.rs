@@ -41,6 +41,7 @@ fn interactive_component(name: &str) -> ComponentDecl {
                 attributes: vec![],
                 directives: vec![Directive::Bind {
                     field: "count".into(),
+                    expr: None,
                     span: s(),
                 }],
                 span: s(),

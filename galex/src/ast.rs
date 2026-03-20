@@ -736,8 +736,13 @@ pub enum AttrValue {
 /// A template directive.
 #[derive(Debug, Clone)]
 pub enum Directive {
-    /// `bind:field`
-    Bind { field: SmolStr, span: Span },
+    /// `bind:field={expr}` — two-way binding between DOM property and signal/variable.
+    /// `field` is the DOM property (e.g. `value`), `expr` is the source (e.g. signal name).
+    Bind {
+        field: SmolStr,
+        expr: Option<Box<Expr>>,
+        span: Span,
+    },
     /// `on:event.modifier={handler}`
     On {
         event: SmolStr,

@@ -928,7 +928,17 @@ fn print_attrs(attributes: &[Attribute], directives: &[Directive], p: &mut Print
     }
     for dir in directives {
         match dir {
-            Directive::Bind { field, .. } => p.write(&format!(" bind:{field}")),
+            Directive::Bind { field, expr, .. } => {
+                if let Some(e) = expr {
+                    if let Expr::Ident { name, .. } = e.as_ref() {
+                        p.write(&format!(" bind:{field}={{{name}}}"));
+                    } else {
+                        p.write(&format!(" bind:{field}={{...}}"));
+                    }
+                } else {
+                    p.write(&format!(" bind:{field}"));
+                }
+            }
             Directive::On {
                 event,
                 modifiers,

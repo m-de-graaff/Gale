@@ -472,7 +472,11 @@ fn bind_directive_sets_up_two_way_binding() {
             tag: "input".into(),
             attributes: vec![],
             directives: vec![Directive::Bind {
-                field: "name".into(),
+                field: "value".into(),
+                expr: Some(Box::new(Expr::Ident {
+                    name: "name".into(),
+                    span: s(),
+                })),
                 span: s(),
             }],
             span: s(),
