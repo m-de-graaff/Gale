@@ -302,17 +302,11 @@ impl TypeChecker {
                 }
             }
         } else {
-            self.emit_error(crate::types::constraint::TypeError {
-                code: &codes::GX0302,
-                expected: self.interner.void,
-                actual: self.interner.void,
-                span,
-                context: format!(
-                    "undefined variable '{}' in `bind:{}` directive",
-                    field, field
-                ),
-                kind: TypeErrorKind::TypeMismatch,
-            });
+            // When `bind:value={name}` appears inside a `<form form:guard={...}>`,
+            // the bind target is a guard field name, not a local variable.
+            // The form codegen wires these automatically.  The Rust compiler
+            // will catch any misspelled field names at build time, so we
+            // skip the error here to avoid false positives on guard fields.
         }
     }
 

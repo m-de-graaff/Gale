@@ -130,6 +130,29 @@ impl TypeChecker {
             env.register_type(name.into(), ty);
         }
 
+        // Register built-in server-side functions as value bindings.
+        // These are available in action bodies and compile to Rust wrappers.
+        {
+            let fetch_ty = interner.make_function(crate::types::ty::FunctionSig {
+                params: vec![crate::types::ty::FnParam {
+                    name: "url".into(),
+                    ty: interner.string,
+                    has_default: false,
+                }],
+                ret: interner.string,
+                is_async: true,
+            });
+            let _ = env.define(
+                "fetch".into(),
+                crate::types::env::Binding {
+                    ty: fetch_ty,
+                    kind: crate::types::env::BindingKind::Function,
+                    span: crate::span::Span::new(0, 0, 0, 0, 0),
+                    boundary: crate::types::env::BoundaryScope::Server,
+                },
+            );
+        }
+
         Self {
             interner,
             env,
