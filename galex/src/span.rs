@@ -134,8 +134,12 @@ impl FileTable {
     ///
     /// Unlike [`add_file`], this avoids duplicate entries for the same path.
     pub fn find_or_add_file(&mut self, path: PathBuf) -> u32 {
+        // Canonicalize for reliable matching — the file table may contain
+        // relative paths while the caller provides absolute paths (or vice versa).
+        let canon = path.canonicalize().unwrap_or_else(|_| path.clone());
         for (id, existing) in self.files.iter().enumerate() {
-            if existing == &path {
+            let existing_canon = existing.canonicalize().unwrap_or_else(|_| existing.clone());
+            if existing_canon == canon {
                 return id as u32;
             }
         }

@@ -386,15 +386,24 @@ impl Compiler {
 
     /// Invalidate files that have changed (for incremental rebuilds).
     pub fn invalidate_files(&mut self, paths: &[PathBuf]) {
+        // Canonicalize changed paths for reliable comparison.
+        // The file table may store relative paths (from initial load) while
+        // the watcher reports absolute/canonicalized paths (from the OS).
+        let canonical_changed: Vec<PathBuf> = paths
+            .iter()
+            .map(|p| p.canonicalize().unwrap_or_else(|_| p.clone()))
+            .collect();
+
         // Remove programs for changed files
         self.programs.retain(|(fid, _)| {
             if let Some(p) = self.file_table.get_path(*fid) {
-                !paths.iter().any(|changed| changed == p)
+                let p_canon = p.canonicalize().unwrap_or_else(|_| p.to_path_buf());
+                !canonical_changed.iter().any(|changed| *changed == p_canon)
             } else {
                 true
             }
         });
-        // Re-read changed files
+        // Re-read changed files — also remove stale source entries
         for path in paths {
             if path.exists() {
                 if let Ok(source) = std::fs::read_to_string(path) {

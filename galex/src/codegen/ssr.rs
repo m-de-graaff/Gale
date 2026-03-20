@@ -493,7 +493,7 @@ fn emit_form_wiring_if_needed(e: &mut RustEmitter, directives: &[Directive]) {
         "html.push_str(\"var __f=document.querySelector('[data-gale-guard=\\\\\\\"{guard_name}\\\\\\\"]');\");",
     ));
     e.writeln(&format!(
-        "html.push_str(\"if(__f)wireForm(__f,{{validate:{validate_fn},sanitize:typeof {sanitize_fn}==='function'?{sanitize_fn}:null,fields:Array.from(__f.querySelectorAll('[name]')).map(function(e){{return e.name}}).filter(function(n){{return n[0]!=='_'}})}});\");",
+        "html.push_str(\"if(__f)wireForm(__f,{{validate:{validate_fn},sanitize:typeof {sanitize_fn}==='function'?{sanitize_fn}:null,fields:Array.from(__f.querySelectorAll('[name]')).map(function(e){{return e.name}}).filter(function(n){{return n[0]!=='_'}}),onResult:function(j){{if(window.__gale_signals__&&window.__gale_signals__.result)window.__gale_signals__.result.set(typeof j==='string'?j:JSON.stringify(j,null,2))}}}});\");",
     ));
     e.writeln("html.push_str(\"</script>\");");
 }
