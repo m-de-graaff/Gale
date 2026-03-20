@@ -55,11 +55,11 @@ pub fn generate_project(opts: &ScaffoldOptions) -> std::io::Result<()> {
 fn write_default_template(root: &Path, name: &str) -> std::io::Result<()> {
     // / — Landing page with interactive counter
     std::fs::write(root.join("app").join("page.gx"), default_index(name))?;
-    // /server — Server action example
-    std::fs::create_dir_all(root.join("app").join("server"))?;
+    // /form — Guard + action + form pattern demo
+    std::fs::create_dir_all(root.join("app").join("form"))?;
     std::fs::write(
-        root.join("app").join("server").join("page.gx"),
-        DEFAULT_SERVER_PAGE,
+        root.join("app").join("form").join("page.gx"),
+        DEFAULT_FORM_PAGE,
     )?;
     Ok(())
 }
@@ -148,44 +148,55 @@ fn default_index(name: &str) -> String {
 
   signal count = 0
 
-  <main class="min-h-screen bg-gradient-to-b from-gray-950 to-gray-900 text-white flex items-center justify-center">
-    <div class="text-center space-y-8 px-4">
-      <div class="space-y-2">
-        <h1 class="text-5xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
-          {name}
-        </h1>
-        <p class="text-gray-400 text-lg">
-          Built with Gale
-        </p>
-      </div>
+  <main class="min-h-screen flex items-center justify-center bg-black">
+    <div class="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-24 px-8 sm:items-start">
 
-      <div class="bg-gray-800/50 rounded-2xl p-8 border border-gray-700/50 backdrop-blur-sm space-y-4">
-        <p class="text-gray-300 text-sm uppercase tracking-wider">Counter</p>
-        <p class="text-6xl font-mono font-bold tabular-nums">{{count}}</p>
-        <div class="flex gap-3 justify-center">
-          <button
-            on:click={{count = count - 1}}
-            class="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition-colors"
-          >
-            -
-          </button>
-          <button
-            on:click={{count = count + 1}}
-            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg font-medium transition-colors"
-          >
-            +
-          </button>
+      <p class="text-sm font-medium text-zinc-500">{name}</p>
+
+      <div class="flex flex-col items-center gap-8 text-center sm:items-start sm:text-left">
+        <h1 class="max-w-md text-3xl font-semibold leading-10 tracking-tight text-zinc-50">
+          Get started by editing app/page.gx
+        </h1>
+        <p class="max-w-md text-base leading-7 text-zinc-400">
+          This counter demonstrates reactive signals. Edit the code to see
+          changes live, or head to the forms demo.
+        </p>
+
+        <div class="w-full max-w-xs rounded-xl border border-zinc-800 bg-zinc-950 p-6 space-y-4">
+          <p class="text-zinc-500 text-xs font-medium uppercase tracking-wider">Counter</p>
+          <p class="text-4xl font-mono font-semibold tabular-nums text-zinc-50">{{count}}</p>
+          <div class="flex gap-2">
+            <button
+              on:click={{count = count - 1}}
+              class="flex-1 h-10 rounded-lg bg-zinc-800 text-zinc-300 text-sm font-medium hover:bg-zinc-700 transition-colors cursor-pointer"
+            >
+              -
+            </button>
+            <button
+              on:click={{count = count + 1}}
+              class="flex-1 h-10 rounded-lg bg-zinc-50 text-zinc-900 text-sm font-medium hover:bg-zinc-300 transition-colors cursor-pointer"
+            >
+              +
+            </button>
+          </div>
         </div>
       </div>
 
-      <div class="flex gap-4 justify-center text-sm">
-        <a href="/server" class="text-blue-400 hover:text-blue-300 underline underline-offset-4">
-          Server Example
+      <div class="flex flex-col gap-3 text-sm font-medium sm:flex-row">
+        <a
+          href="/form"
+          class="flex h-10 items-center justify-center rounded-full bg-zinc-50 px-5 text-zinc-900 transition-colors hover:bg-zinc-300"
+        >
+          Forms Demo
         </a>
-        <a href="https://get-gale.vercel.app/docs" class="text-gray-500 hover:text-gray-400 underline underline-offset-4">
+        <a
+          href="https://get-gale.vercel.app/docs"
+          class="flex h-10 items-center justify-center rounded-full border border-zinc-800 px-5 text-zinc-400 transition-colors hover:border-zinc-600 hover:text-zinc-50"
+        >
           Documentation
         </a>
       </div>
+
     </div>
   </main>
 }}
@@ -193,38 +204,65 @@ fn default_index(name: &str) -> String {
     )
 }
 
-const DEFAULT_SERVER_PAGE: &str = r#"out ui ServerPage {
+const DEFAULT_FORM_PAGE: &str = r#"guard NameForm {
+  name: string.trim().minLen(1).maxLen(50)
+}
+
+server {
+  action greet(data: NameForm) -> string {
+    return "Hello, " + data.name + "!"
+  }
+}
+
+client {
+  signal result = ""
+}
+
+out ui FormPage {
   head {
-    title: "Server Example"
+    title: "Forms"
   }
 
-  <main class="min-h-screen bg-gradient-to-b from-gray-950 to-gray-900 text-white flex items-center justify-center">
-    <div class="text-center space-y-8 px-4 max-w-lg">
+  <main class="min-h-screen flex items-center justify-center bg-black">
+    <div class="w-full max-w-md px-8 py-24 space-y-8">
+
       <div class="space-y-2">
-        <h1 class="text-4xl font-bold tracking-tight">Server Rendering</h1>
-        <p class="text-gray-400">
-          This page is server-side rendered. The HTML is generated on the
-          server and sent to the browser as a complete document.
+        <h1 class="text-2xl font-semibold tracking-tight text-zinc-50">Forms</h1>
+        <p class="text-sm leading-6 text-zinc-400">
+          Validated forms with the guard + action pattern. The guard validates
+          input on both client and server. The action runs on the server.
         </p>
       </div>
 
-      <div class="bg-gray-800/50 rounded-2xl p-8 border border-gray-700/50 space-y-4">
-        <p class="text-gray-300 text-sm uppercase tracking-wider">Server Info</p>
-        <div class="text-left space-y-2 text-sm">
-          <div class="flex justify-between">
-            <span class="text-gray-400">Runtime</span>
-            <span class="text-white font-mono">Gale (Rust/Axum)</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-400">Rendering</span>
-            <span class="text-white font-mono">SSR</span>
-          </div>
-        </div>
-      </div>
+      <form form:action={greet} form:guard={NameForm} class="rounded-xl border border-zinc-800 bg-zinc-950 p-6 space-y-4">
+        <label class="block space-y-1.5">
+          <span class="text-sm font-medium text-zinc-400">Name</span>
+          <input
+            bind:value={name}
+            placeholder="Enter a name..."
+            class="w-full rounded-lg border border-zinc-800 bg-black px-3 py-2 text-sm text-zinc-50 placeholder-zinc-600 outline-none focus:border-zinc-500 transition-colors"
+          />
+          <form:error field="name" class="text-xs text-red-400" />
+        </label>
 
-      <a href="/" class="inline-block text-blue-400 hover:text-blue-300 underline underline-offset-4 text-sm">
-        Back home
+        <button
+          type="submit"
+          class="w-full h-10 rounded-lg bg-zinc-50 text-zinc-900 text-sm font-medium hover:bg-zinc-300 transition-colors cursor-pointer"
+        >
+          Submit
+        </button>
+
+        when result != "" {
+          <div class="rounded-lg border border-zinc-800 bg-black p-4">
+            <p class="text-sm text-zinc-50">{result}</p>
+          </div>
+        }
+      </form>
+
+      <a href="/" class="inline-block text-sm text-zinc-500 hover:text-zinc-50 transition-colors">
+        &larr; Back home
       </a>
+
     </div>
   </main>
 }
@@ -436,5 +474,16 @@ mod tests {
         let page = default_index("test");
         assert!(page.contains("signal count = 0"));
         assert!(page.contains("on:click"));
+        assert!(page.contains("Get started by editing app/page.gx"));
+        assert!(page.contains("/form"));
+    }
+
+    #[test]
+    fn default_form_page_has_guard_and_action() {
+        assert!(DEFAULT_FORM_PAGE.contains("guard NameForm"));
+        assert!(DEFAULT_FORM_PAGE.contains("action greet"));
+        assert!(DEFAULT_FORM_PAGE.contains("form:action={greet}"));
+        assert!(DEFAULT_FORM_PAGE.contains("form:guard={NameForm}"));
+        assert!(DEFAULT_FORM_PAGE.contains("form:error field=\"name\""));
     }
 }
