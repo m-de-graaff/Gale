@@ -91,9 +91,14 @@ impl FileWatcher {
             watcher.watch(&config_file, RecursiveMode::NonRecursive)?;
         }
 
-        // Bridge from std::sync::mpsc to tokio::sync::mpsc
-        let app_dir_owned = app_dir.to_path_buf();
-        let project_dir_owned = project_dir.to_path_buf();
+        // Bridge from std::sync::mpsc to tokio::sync::mpsc.
+        // Canonicalize the watched paths so they match the canonicalized
+        // event paths (important on Windows where the watcher may report
+        // UNC paths like \\?\C:\... while the input uses C:\...).
+        let app_dir_owned = app_dir.canonicalize().unwrap_or_else(|_| app_dir.to_path_buf());
+        let project_dir_owned = project_dir
+            .canonicalize()
+            .unwrap_or_else(|_| project_dir.to_path_buf());
         let (tx, rx) = mpsc::channel(32);
 
         std::thread::spawn(move || {
@@ -103,8 +108,14 @@ impl FileWatcher {
                         let changes: Vec<ChangeKind> = events
                             .into_iter()
                             .filter_map(|ev| {
+                                // Canonicalize the path to resolve symlinks and
+                                // normalize separators.  On Windows, the watcher
+                                // may report UNC or mixed-separator paths that
+                                // don't match the watched directory prefix,
+                                // causing classify_change to return None.
+                                let path = ev.path.canonicalize().unwrap_or(ev.path.clone());
                                 classify_change(
-                                    &ev.path,
+                                    &path,
                                     &ev.kind,
                                     &app_dir_owned,
                                     &project_dir_owned,
@@ -113,11 +124,15 @@ impl FileWatcher {
                             .collect();
                         if !changes.is_empty() {
                             if tx.blocking_send(changes).is_err() {
+                                eprintln!("  warning: watcher channel closed — hot reload stopped");
                                 break;
                             }
                         }
                     }
-                    Err(_) => {} // Watch error — ignore
+                    Err(errs) => {
+                        eprintln!("  warning: file watcher error: {errs:?}");
+                        eprintln!("  Some file changes may have been missed.");
+                    }
                 }
             }
         });

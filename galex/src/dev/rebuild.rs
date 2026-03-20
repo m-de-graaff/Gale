@@ -196,6 +196,7 @@ impl RebuildManager {
         }
 
         if needs_gx_rebuild {
+            eprintln!("  Rebuilding...");
             // Re-discover routes if structural change
             if needs_rediscover {
                 match router::discovery::discover_routes(&self.app_dir) {
