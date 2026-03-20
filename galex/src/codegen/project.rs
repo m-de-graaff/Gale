@@ -119,6 +119,7 @@ pub fn generate_cargo_toml(
     project_name: &str,
     needs_regex: bool,
     has_channels: bool,
+    has_fetch: bool,
     gale_dep: &str,
 ) -> String {
     let mut e = RustEmitter::new();
@@ -134,7 +135,21 @@ pub fn generate_cargo_toml(
     e.writeln("[workspace]");
     e.newline();
     e.writeln("[dependencies]");
-    e.writeln(&format!("gale = {gale_dep}"));
+    // Inject `features = ["http"]` when the project uses server-side fetch().
+    if has_fetch {
+        if gale_dep.contains('{') {
+            // Inline table — inject features before closing brace
+            let trimmed = gale_dep.trim_end().trim_end_matches('}').trim_end();
+            e.writeln(&format!("gale = {trimmed}, features = [\"http\"] }}"));
+        } else {
+            // Simple version string — wrap in table with features
+            e.writeln(&format!(
+                "gale = {{ version = {gale_dep}, features = [\"http\"] }}"
+            ));
+        }
+    } else {
+        e.writeln(&format!("gale = {gale_dep}"));
+    }
     // Only include WebSocket support when the project uses channels.
     // Omitting `ws` avoids tungstenite, tokio-tungstenite, sha1, base64,
     // rand, and several crypto crates (~15 fewer packages).
@@ -651,6 +666,9 @@ pub struct MainModules {
     pub has_api: bool,
     pub has_middleware: bool,
     pub has_env: bool,
+    /// Whether any action body uses `fetch()` — triggers the `http` feature
+    /// on the `gale` dependency and adds `reqwest` to the compile.
+    pub has_fetch: bool,
 }
 
 /// Generate a `mod.rs` that re-exports child modules.
@@ -746,7 +764,7 @@ pub fn scaffold(project_name: &str) -> ProjectFiles {
     // which resolves the dep at runtime via resolve_gale_dep().
     files.add_file(
         "Cargo.toml",
-        generate_cargo_toml(project_name, false, false, "\"0.0.0\""),
+        generate_cargo_toml(project_name, false, false, false, "\"0.0.0\""),
     );
 
     // src/main.rs — start with all modules disabled; they'll be enabled
@@ -768,13 +786,19 @@ mod tests {
 
     #[test]
     fn cargo_toml_has_package_name() {
-        let toml = generate_cargo_toml("my_app", false, false, "\"0.0.0\"");
+        let toml = generate_cargo_toml("my_app", false, false, false, "\"0.0.0\"");
         assert!(toml.contains("name = \"my_app\""));
     }
 
     #[test]
     fn cargo_toml_has_gale_dep_path() {
-        let toml = generate_cargo_toml("test", false, false, "{ path = \"/usr/local/lib/gale\" }");
+        let toml = generate_cargo_toml(
+            "test",
+            false,
+            false,
+            false,
+            "{ path = \"/usr/local/lib/gale\" }",
+        );
         assert!(toml.contains("gale = { path = \"/usr/local/lib/gale\" }"));
     }
 
@@ -782,6 +806,7 @@ mod tests {
     fn cargo_toml_has_gale_dep_git() {
         let toml = generate_cargo_toml(
             "test",
+            false,
             false,
             false,
             "{ git = \"https://github.com/m-de-graaff/Gale\", tag = \"v0.1.4\" }",
@@ -793,7 +818,7 @@ mod tests {
     #[test]
     fn cargo_toml_has_axum_dep_without_ws() {
         // Without channels, axum should NOT have ws feature
-        let toml = generate_cargo_toml("test", false, false, "\"0.0.0\"");
+        let toml = generate_cargo_toml("test", false, false, false, "\"0.0.0\"");
         assert!(toml.contains("axum = \"0.8\""));
         assert!(!toml.contains("features = [\"ws\"]"));
     }
@@ -801,28 +826,28 @@ mod tests {
     #[test]
     fn cargo_toml_has_axum_ws_with_channels() {
         // With channels, axum SHOULD have ws feature
-        let toml = generate_cargo_toml("test", false, true, "\"0.0.0\"");
+        let toml = generate_cargo_toml("test", false, true, false, "\"0.0.0\"");
         assert!(toml.contains("axum = { version = \"0.8\", features = [\"ws\"] }"));
         assert!(toml.contains("futures-util = \"0.3\""));
     }
 
     #[test]
     fn cargo_toml_has_serde_dep() {
-        let toml = generate_cargo_toml("test", false, false, "\"0.0.0\"");
+        let toml = generate_cargo_toml("test", false, false, false, "\"0.0.0\"");
         assert!(toml.contains("serde = "));
         assert!(toml.contains("serde_json = "));
     }
 
     #[test]
     fn cargo_toml_has_release_profile() {
-        let toml = generate_cargo_toml("test", false, false, "\"0.0.0\"");
+        let toml = generate_cargo_toml("test", false, false, false, "\"0.0.0\"");
         assert!(toml.contains("[profile.release]"));
         assert!(toml.contains("lto = true"));
     }
 
     #[test]
     fn cargo_toml_dev_profile_optimized_for_speed() {
-        let toml = generate_cargo_toml("test", false, false, "\"0.0.0\"");
+        let toml = generate_cargo_toml("test", false, false, false, "\"0.0.0\"");
         assert!(toml.contains("opt-level = 0"));
         assert!(toml.contains("debug = 0"));
         assert!(toml.contains("incremental = true"));
@@ -830,18 +855,36 @@ mod tests {
 
     #[test]
     fn cargo_toml_no_futures_util_without_channels() {
-        let toml = generate_cargo_toml("test", false, false, "\"0.0.0\"");
+        let toml = generate_cargo_toml("test", false, false, false, "\"0.0.0\"");
         assert!(!toml.contains("futures-util"));
     }
 
     #[test]
     fn cargo_toml_trimmed_tokio_features() {
-        let toml = generate_cargo_toml("test", false, false, "\"0.0.0\"");
+        let toml = generate_cargo_toml("test", false, false, false, "\"0.0.0\"");
         assert!(toml.contains("rt-multi-thread"));
         assert!(toml.contains("macros"));
         assert!(toml.contains("net"));
         assert!(toml.contains("signal"));
         assert!(!toml.contains("\"full\""));
+    }
+
+    #[test]
+    fn cargo_toml_has_http_feature_with_fetch() {
+        let toml = generate_cargo_toml(
+            "test",
+            false,
+            false,
+            true,
+            "{ path = \"/some/path\", default-features = false }",
+        );
+        assert!(toml.contains("features = [\"http\"]"));
+    }
+
+    #[test]
+    fn cargo_toml_no_http_feature_without_fetch() {
+        let toml = generate_cargo_toml("test", false, false, false, "\"0.0.0\"");
+        assert!(!toml.contains("features = [\"http\"]"));
     }
 
     #[test]
@@ -888,6 +931,7 @@ mod tests {
             has_api: false,
             has_middleware: false,
             has_env: false,
+            has_fetch: false,
         };
         let main = generate_main_rs(&modules, false, &[], &[], &[], &[], &[]);
         assert!(main.contains("mod actions;"));
@@ -944,7 +988,7 @@ mod tests {
 
     #[test]
     fn cargo_toml_has_ws_feature_with_channels() {
-        let toml = generate_cargo_toml("test", false, true, "\"0.0.0\"");
+        let toml = generate_cargo_toml("test", false, true, false, "\"0.0.0\"");
         assert!(toml.contains("features = [\"ws\"]"));
     }
 

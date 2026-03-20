@@ -1227,6 +1227,7 @@ dependencies = [
  "http-body-util",
  "mimalloc",
  "percent-encoding",
+ "reqwest",
  "rustls",
  "rustls-acme",
  "rustls-pemfile",

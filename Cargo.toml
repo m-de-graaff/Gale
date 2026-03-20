@@ -3,7 +3,7 @@ members = ["galex", "gale-registry"]
 
 [package]
 name = "gale"
-version = "0.2.9"
+version = "0.2.10"
 edition = "2021"
 description = "A fast, minimal, and secure static web server"
 license = "MIT/Apache-2.0"
@@ -24,6 +24,7 @@ default = ["tls", "compression", "mimalloc"]
 tls = ["dep:axum-server", "dep:rustls", "dep:rustls-pemfile", "dep:rustls-acme", "dep:futures-util"]
 compression = ["tower-http/compression-br", "tower-http/compression-gzip"]
 mimalloc = ["dep:mimalloc"]
+http = ["dep:reqwest"]
 
 [dependencies]
 # Core
@@ -41,6 +42,7 @@ tower-service = "0.3"    # Service trait for custom 404 handler
 percent-encoding = "2"   # URL decoding for path security
 mimalloc = { version = "0.1", default-features = false, optional = true } # 5-15% throughput improvement
 dashmap = "6"            # Lock-free concurrent HashMap for rate limiter + path cache
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"], optional = true }
 
 # Config
 serde = { version = "1", features = ["derive"] }

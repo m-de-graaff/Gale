@@ -335,6 +335,10 @@ impl<'a> CodegenContext<'a> {
                     self.action_modules.push(mod_name.clone());
                     self.action_routes
                         .push((decl.name.to_string(), mod_name.clone()));
+                    // Detect fetch() usage in action body
+                    if emit_action::block_uses_fetch(&decl.body) {
+                        self.modules.has_fetch = true;
+                    }
                     // Generate real action handler
                     let mut emitter = rust_emitter::RustEmitter::new();
                     emit_action::emit_action_file(
@@ -563,6 +567,7 @@ impl<'a> CodegenContext<'a> {
                 &self.project_name,
                 self.needs_regex,
                 self.modules.has_channels,
+                self.modules.has_fetch,
                 &self.gale_dep,
             ),
         );

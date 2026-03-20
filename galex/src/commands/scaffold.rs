@@ -204,13 +204,14 @@ fn default_index(name: &str) -> String {
     )
 }
 
-const DEFAULT_FORM_PAGE: &str = r#"guard NameForm {
+const DEFAULT_FORM_PAGE: &str = r#"guard PokemonSearch {
   name: string.trim().minLen(1).maxLen(50)
 }
 
 server {
-  action greet(data: NameForm) -> string {
-    return "Hello, " + data.name + "!"
+  action searchPokemon(data: PokemonSearch) -> string {
+    let response = await fetch("https://pokeapi.co/api/v2/pokemon/" + data.name)
+    return response
   }
 }
 
@@ -229,17 +230,17 @@ out ui FormPage {
       <div class="space-y-2">
         <h1 class="text-2xl font-semibold tracking-tight text-zinc-50">Forms</h1>
         <p class="text-sm leading-6 text-zinc-400">
-          Validated forms with the guard + action pattern. The guard validates
-          input on both client and server. The action runs on the server.
+          Search the PokeAPI from the server. The guard validates input on both
+          client and server. The action makes an HTTP request from Rust.
         </p>
       </div>
 
-      <form form:action={greet} form:guard={NameForm} class="rounded-xl border border-zinc-800 bg-zinc-950 p-6 space-y-4">
+      <form form:action={searchPokemon} form:guard={PokemonSearch} class="rounded-xl border border-zinc-800 bg-zinc-950 p-6 space-y-4">
         <label class="block space-y-1.5">
-          <span class="text-sm font-medium text-zinc-400">Name</span>
+          <span class="text-sm font-medium text-zinc-400">Pokemon</span>
           <input
             bind:value={name}
-            placeholder="Enter a name..."
+            placeholder="pikachu"
             class="w-full rounded-lg border border-zinc-800 bg-black px-3 py-2 text-sm text-zinc-50 placeholder-zinc-600 outline-none focus:border-zinc-500 transition-colors"
           />
           <form:error field="name" class="text-xs text-red-400" />
@@ -249,12 +250,12 @@ out ui FormPage {
           type="submit"
           class="w-full h-10 rounded-lg bg-zinc-50 text-zinc-900 text-sm font-medium hover:bg-zinc-300 transition-colors cursor-pointer"
         >
-          Submit
+          Search
         </button>
 
         when result != "" {
           <div class="rounded-lg border border-zinc-800 bg-black p-4">
-            <p class="text-sm text-zinc-50">{result}</p>
+            <pre class="text-xs text-zinc-400 whitespace-pre-wrap break-all max-h-64 overflow-y-auto">{result}</pre>
           </div>
         }
       </form>
@@ -480,10 +481,12 @@ mod tests {
 
     #[test]
     fn default_form_page_has_guard_and_action() {
-        assert!(DEFAULT_FORM_PAGE.contains("guard NameForm"));
-        assert!(DEFAULT_FORM_PAGE.contains("action greet"));
-        assert!(DEFAULT_FORM_PAGE.contains("form:action={greet}"));
-        assert!(DEFAULT_FORM_PAGE.contains("form:guard={NameForm}"));
+        assert!(DEFAULT_FORM_PAGE.contains("guard PokemonSearch"));
+        assert!(DEFAULT_FORM_PAGE.contains("action searchPokemon"));
+        assert!(DEFAULT_FORM_PAGE.contains("form:action={searchPokemon}"));
+        assert!(DEFAULT_FORM_PAGE.contains("form:guard={PokemonSearch}"));
         assert!(DEFAULT_FORM_PAGE.contains("form:error field=\"name\""));
+        assert!(DEFAULT_FORM_PAGE.contains("await fetch("));
+        assert!(DEFAULT_FORM_PAGE.contains("pokeapi.co"));
     }
 }

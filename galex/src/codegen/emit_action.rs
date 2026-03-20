@@ -67,6 +67,13 @@ pub fn emit_action_file(
     }
     e.newline();
 
+    // ── fetch() wrapper (when action body uses fetch) ─────────
+    let uses_fetch = block_uses_fetch(&decl.body);
+    if uses_fetch {
+        emit_fetch_wrapper(e);
+        e.newline();
+    }
+
     // ── Input struct (for non-guard params) ────────────────────
     if needs_input_struct {
         emit_input_struct(e, decl);
@@ -221,6 +228,84 @@ fn pascal_case(name: &str) -> String {
         }
     }
     result
+}
+
+// ── fetch() detection and wrapper ──────────────────────────────────────
+
+/// Emit a local `fetch` async helper that wraps `gale_lib::http::get()`.
+///
+/// Placed at file scope (before the handler fn) so the action body can
+/// simply call `fetch(url).await`.  Returns the response body as a
+/// `String`, or an empty string on error.
+fn emit_fetch_wrapper(e: &mut RustEmitter) {
+    e.writeln("/// HTTP fetch helper — wraps `gale_lib::http::get()`.");
+    e.writeln("#[allow(dead_code)]");
+    e.block("async fn fetch(url: &str) -> String", |e| {
+        e.writeln("gale_lib::http::get(url).await.unwrap_or_default()");
+    });
+}
+
+/// Check whether a block (action body) contains any call to `fetch()`.
+pub fn block_uses_fetch(block: &Block) -> bool {
+    block.stmts.iter().any(|s| stmt_uses_fetch(s))
+}
+
+fn stmt_uses_fetch(stmt: &Stmt) -> bool {
+    match stmt {
+        Stmt::Let { init, .. } | Stmt::Mut { init, .. } | Stmt::Frozen { init, .. } => {
+            expr_uses_fetch(init)
+        }
+        Stmt::Return { value, .. } => value.as_ref().is_some_and(|e| expr_uses_fetch(e)),
+        Stmt::ExprStmt { expr, .. } => expr_uses_fetch(expr),
+        Stmt::If {
+            condition,
+            then_block,
+            else_branch,
+            ..
+        } => {
+            expr_uses_fetch(condition)
+                || block_uses_fetch(then_block)
+                || match else_branch {
+                    Some(ElseBranch::Else(b)) => block_uses_fetch(b),
+                    Some(ElseBranch::ElseIf(s)) => stmt_uses_fetch(s),
+                    None => false,
+                }
+        }
+        Stmt::For { iterable, body, .. } => expr_uses_fetch(iterable) || block_uses_fetch(body),
+        Stmt::Block(b) => block_uses_fetch(b),
+        Stmt::FnDecl(decl) => block_uses_fetch(&decl.body),
+        _ => false,
+    }
+}
+
+fn expr_uses_fetch(expr: &Expr) -> bool {
+    match expr {
+        Expr::FnCall { callee, args, .. } => {
+            // Direct `fetch(url)` call
+            if matches!(callee.as_ref(), Expr::Ident { name, .. } if name == "fetch") {
+                return true;
+            }
+            expr_uses_fetch(callee) || args.iter().any(|a| expr_uses_fetch(a))
+        }
+        Expr::Await { expr: inner, .. } => expr_uses_fetch(inner),
+        Expr::BinaryOp { left, right, .. } => expr_uses_fetch(left) || expr_uses_fetch(right),
+        Expr::UnaryOp { operand, .. } => expr_uses_fetch(operand),
+        Expr::MemberAccess { object, .. } => expr_uses_fetch(object),
+        Expr::Ternary {
+            condition,
+            then_expr,
+            else_expr,
+            ..
+        } => expr_uses_fetch(condition) || expr_uses_fetch(then_expr) || expr_uses_fetch(else_expr),
+        Expr::TemplateLit { parts, .. } => parts.iter().any(|p| {
+            if let TemplatePart::Expr(e) = p {
+                expr_uses_fetch(e)
+            } else {
+                false
+            }
+        }),
+        _ => false,
+    }
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────
